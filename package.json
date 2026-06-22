@@ -2,6 +2,7 @@
 	"name": "remisiones-backend",
 	"version": "1.0.0",
 	"description": "Backend para generador de remisiones - Node/Express/Bun, Clean Architecture, MongoDB",
+  "module": "index.js",
 	"type": "module",
 	"scripts": {
 		"dev": "bun --watch run src/index.ts",
