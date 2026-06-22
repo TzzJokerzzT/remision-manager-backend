@@ -24,7 +24,7 @@ import {
   driverController,
   remisionController,
 } from '../../di/container.js';
-import { connectDatabase } from '@/infrastructure/database/mongoose.js';
+import { connectDatabase } from '../../infrastructure/database/mongoose.js';
 
 export function createServer(): Application {
   const app = express();
