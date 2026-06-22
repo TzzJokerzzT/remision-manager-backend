@@ -19,8 +19,8 @@ export class CompanyUseCases {
     return company;
   }
 
-  async listMine(ownerId: string): Promise<Company[]> {
-    return this.companyRepo.listByOwner(ownerId);
+  async listMine(ownerId: string, search?: string): Promise<Company[]> {
+    return this.companyRepo.listByOwner(ownerId, search);
   }
 
   async update(id: string, dto: UpdateCompanyDto, requesterId: string, role: 'admin' | 'user'): Promise<Company> {

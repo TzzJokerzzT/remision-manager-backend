@@ -26,8 +26,8 @@ export class ClientUseCases {
     return client;
   }
 
-  async listMine(ownerId: string, companyId?: string): Promise<Client[]> {
-    return this.clientRepo.listByOwner(ownerId, companyId);
+  async listMine(ownerId: string, companyId?: string, search?: string): Promise<Client[]> {
+    return this.clientRepo.listByOwner(ownerId, companyId, search);
   }
 
   async update(id: string, dto: UpdateClientDto, requesterId: string, role: 'admin' | 'user'): Promise<Client> {

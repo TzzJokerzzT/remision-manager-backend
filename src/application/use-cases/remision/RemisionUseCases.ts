@@ -46,8 +46,8 @@ export class RemisionUseCases {
     return remision;
   }
 
-  async listMine(ownerId: string, companyId?: string): Promise<Remision[]> {
-    return this.remisionRepo.listByOwner(ownerId, companyId);
+  async listMine(ownerId: string, companyId?: string, search?: string): Promise<Remision[]> {
+    return this.remisionRepo.listByOwner(ownerId, companyId, search);
   }
 
   async update(id: string, dto: UpdateRemisionDto, requesterId: string, role: 'admin' | 'user'): Promise<Remision> {

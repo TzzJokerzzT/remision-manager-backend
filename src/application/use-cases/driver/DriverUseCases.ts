@@ -26,8 +26,8 @@ export class DriverUseCases {
     return driver;
   }
 
-  async listMine(ownerId: string, companyId?: string): Promise<Driver[]> {
-    return this.driverRepo.listByOwner(ownerId, companyId);
+  async listMine(ownerId: string, companyId?: string, search?: string): Promise<Driver[]> {
+    return this.driverRepo.listByOwner(ownerId, companyId, search);
   }
 
   async update(id: string, dto: UpdateDriverDto, requesterId: string, role: 'admin' | 'user'): Promise<Driver> {
