@@ -6,7 +6,6 @@
       "dest": "/src/index.js"
     }
   ],
-  "outputDirectory": "build",
   "framework": "express",
   "installCommand": "bun install"
 }
