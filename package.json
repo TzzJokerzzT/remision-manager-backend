@@ -4,12 +4,6 @@
 	"description": "Backend para generador de remisiones - Node/Express/Bun, Clean Architecture, MongoDB",
   "module": "index.js",
 	"type": "module",
-	"scripts": {
-		"dev": "bun --watch run src/index.ts",
-		"start": "bun run src/index.ts",
-		"build": "tsc --noEmit",
-		"lint": "eslint ."
-	},
 	"dependencies": {
 		"bcryptjs": "^2.4.3",
 		"cors": "^2.8.5",
