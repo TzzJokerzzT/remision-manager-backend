@@ -14,7 +14,7 @@ async function bootstrap() {
 		);
 	});
 
-	const shutdown = (signal: string) => {
+	const shutdown = (signal) => {
 		console.log(`\n${signal} recibido. Cerrando servidor...`);
 		server.close(() => process.exit(0));
 	};
