@@ -26,7 +26,8 @@ export class DriverController {
   list = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const companyId = typeof req.query.companyId === 'string' ? req.query.companyId : undefined;
-      const drivers = await this.driverUseCases.listMine(req.user!.id, companyId);
+      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+      const drivers = await this.driverUseCases.listMine(req.user!.id, companyId, search);
       res.json({ success: true, data: drivers });
     } catch (err) {
       next(err);

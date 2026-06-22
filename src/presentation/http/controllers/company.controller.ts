@@ -25,7 +25,8 @@ export class CompanyController {
 
   list = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
-      const companies = await this.companyUseCases.listMine(req.user!.id);
+      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+      const companies = await this.companyUseCases.listMine(req.user!.id, search);
       res.json({ success: true, data: companies });
     } catch (err) {
       next(err);

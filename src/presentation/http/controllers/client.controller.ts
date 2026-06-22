@@ -26,7 +26,8 @@ export class ClientController {
   list = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
     try {
       const companyId = typeof req.query.companyId === 'string' ? req.query.companyId : undefined;
-      const clients = await this.clientUseCases.listMine(req.user!.id, companyId);
+      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+      const clients = await this.clientUseCases.listMine(req.user!.id, companyId, search);
       res.json({ success: true, data: clients });
     } catch (err) {
       next(err);
