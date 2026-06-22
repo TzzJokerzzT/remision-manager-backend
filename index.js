@@ -1,29 +1,18 @@
-import { env } from "./src/config/env";
+// src/index.ts
+import { env } from './config/env.js';
+import { connectDatabase } from './infrastructure/database/mongoose.js';
+import { createServer } from './presentation/http/server.js';
 
-import { connectDatabase } from "./src/infrastructure/database/mongoose";
-import { createServer } from "./src/presentation/http/server";
+const app = createServer();
 
-async function bootstrap() {
-	await connectDatabase();
+// Export para Vercel serverless
+export default app;
 
-	const app = createServer();
-
-	const server = app.listen(env.PORT, () => {
-		console.log(
-			`🚀 Servidor corriendo en http://localhost:${env.PORT} [${env.NODE_ENV}]`,
-		);
-	});
-
-	const shutdown = (signal) => {
-		console.log(`\n${signal} recibido. Cerrando servidor...`);
-		server.close(() => process.exit(0));
-	};
-
-	process.on("SIGINT", () => shutdown("SIGINT"));
-	process.on("SIGTERM", () => shutdown("SIGTERM"));
+// Solo escucha en desarrollo local (Vercel no llega a esta línea)
+if (process.env.VERCEL !== '1') {
+  connectDatabase().then(() => {
+    app.listen(env.PORT, () => {
+      console.log(`🚀 Servidor en http://localhost:${env.PORT} [${env.NODE_ENV}]`);
+    });
+  });
 }
-
-bootstrap().catch((err) => {
-	console.error("❌ Error al iniciar la aplicación:", err);
-	process.exit(1);
-});
