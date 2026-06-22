@@ -38,10 +38,18 @@ export class DriverRepository implements IDriverRepository {
     return !!result;
   }
 
-  async listByOwner(ownerId: string, companyId?: string): Promise<Driver[]> {
-    const filter: Record<string, string> = { ownerId };
+  async listByOwner(ownerId: string, companyId?: string, search?: string): Promise<Driver[]> {
+    const filter: Record<string, unknown> = { ownerId };
     if (companyId) filter.companyId = companyId;
-    const docs = await DriverModel.find(filter);
+    if (search && search.trim().length > 0) {
+      filter.$text = { $search: search.trim() };
+    }
+    const query = DriverModel.find(filter);
+    if (search && search.trim().length > 0) {
+      query.select({ score: { $meta: 'textScore' } });
+      query.sort({ score: { $meta: 'textScore' } });
+    }
+    const docs = await query;
     return docs.map(toDomain);
   }
 }

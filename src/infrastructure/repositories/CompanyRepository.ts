@@ -43,8 +43,17 @@ export class CompanyRepository implements ICompanyRepository {
     return !!result;
   }
 
-  async listByOwner(ownerId: string): Promise<Company[]> {
-    const docs = await CompanyModel.find({ ownerId });
+  async listByOwner(ownerId: string, search?: string): Promise<Company[]> {
+    const filter: Record<string, unknown> = { ownerId };
+    if (search && search.trim().length > 0) {
+      filter.$text = { $search: search.trim() };
+    }
+    const query = CompanyModel.find(filter);
+    if (search && search.trim().length > 0) {
+      query.select({ score: { $meta: 'textScore' } });
+      query.sort({ score: { $meta: 'textScore' } });
+    }
+    const docs = await query;
     return docs.map(toDomain);
   }
 }
