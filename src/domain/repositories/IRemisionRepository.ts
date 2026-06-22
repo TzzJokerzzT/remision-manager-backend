@@ -5,6 +5,6 @@ export interface IRemisionRepository {
   findById(id: string): Promise<Remision | null>;
   update(id: string, data: Partial<Remision>): Promise<Remision | null>;
   delete(id: string): Promise<boolean>;
-  listByOwner(ownerId: string, companyId?: string): Promise<Remision[]>;
+  listByOwner(ownerId: string, companyId?: string, search?: string): Promise<Remision[]>;
   getNextConsecutive(companyId: string): Promise<number>;
 }
