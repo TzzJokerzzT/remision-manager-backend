@@ -1,7 +1,7 @@
 // src/index.ts
-import { env } from './config/env.js';
-import { connectDatabase } from './infrastructure/database/mongoose.js';
-import { createServer } from './presentation/http/server.js';
+import { env } from './config/env';
+import { connectDatabase } from './infrastructure/database/mongoose';
+import { createServer } from './src/index';
 
 const app = createServer();
 
