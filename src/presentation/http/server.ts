@@ -24,6 +24,7 @@ import {
   driverController,
   remisionController,
 } from '../../di/container.js';
+import { connectDatabase } from '@/infrastructure/database/mongoose.js';
 
 export function createServer(): Application {
   const app = express();
@@ -71,6 +72,16 @@ export function createServer(): Application {
   if (env.NODE_ENV !== 'test') {
     app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
   }
+
+  // Agrega esto en createServer(), antes de las rutas:
+let dbReady = false;
+app.use(async (_req, _res, next) => {
+  if (!dbReady) {
+    await connectDatabase();
+    dbReady = true;
+  }
+  next();
+});
 
   // --- Rutas ---
   app.get('/health', (_req, res) => res.json({ success: true, status: 'ok' }));
