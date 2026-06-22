@@ -52,5 +52,6 @@ const remisionSchema = new Schema<RemisionDocument>(
 );
 
 remisionSchema.index({ companyId: 1, consecutive: 1 }, { unique: true });
+remisionSchema.index({ notes: 'text' });
 
 export const RemisionModel = model<RemisionDocument>('Remision', remisionSchema);

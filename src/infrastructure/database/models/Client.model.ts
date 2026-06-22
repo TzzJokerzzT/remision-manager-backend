@@ -25,4 +25,6 @@ const clientSchema = new Schema<ClientDocument>(
   { timestamps: true, strict: true }
 );
 
+clientSchema.index({ name: 'text', documentId: 'text' });
+
 export const ClientModel = model<ClientDocument>('Client', clientSchema);

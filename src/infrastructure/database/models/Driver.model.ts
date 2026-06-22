@@ -25,4 +25,6 @@ const driverSchema = new Schema<DriverDocument>(
   { timestamps: true, strict: true }
 );
 
+driverSchema.index({ name: 'text', documentId: 'text', vehiclePlate: 'text' });
+
 export const DriverModel = model<DriverDocument>('Driver', driverSchema);

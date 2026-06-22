@@ -26,5 +26,6 @@ const companySchema = new Schema<CompanyDocument>(
 );
 
 companySchema.index({ ownerId: 1, nit: 1 }, { unique: true });
+companySchema.index({ name: 'text', nit: 'text' });
 
 export const CompanyModel = model<CompanyDocument>('Company', companySchema);
