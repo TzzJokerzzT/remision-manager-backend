@@ -1,54 +1,118 @@
-import { Response, NextFunction } from 'express';
-import { RemisionUseCases } from '../../../application/use-cases/remision/RemisionUseCases.js';
-import { AuthenticatedRequest } from '../middlewares/authenticate.js';
+import type { NextFunction, Response } from "express";
+import type { RemisionUseCases } from "../../../application/use-cases/remision/RemisionUseCases.js";
+import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
 
 export class RemisionController {
-  constructor(private readonly remisionUseCases: RemisionUseCases) {}
+	constructor(private readonly remisionUseCases: RemisionUseCases) {}
 
-  create = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const remision = await this.remisionUseCases.create(req.body, req.user!.id, req.user!.role);
-      res.status(201).json({ success: true, data: remision });
-    } catch (err) {
-      next(err);
-    }
-  };
+	create = async (
+		req: AuthenticatedRequest,
+		res: Response,
+		next: NextFunction,
+	) => {
+		try {
+			const remision = await this.remisionUseCases.create(
+				req.body,
+				req.user!.id,
+				req.user!.role,
+			);
+			res.status(201).json({
+				success: true,
+				data: remision,
+				message: "Remisión creada exitosamente",
+			});
+		} catch (err) {
+			next(err);
+		}
+	};
 
-  getById = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const remision = await this.remisionUseCases.getById(req.params.id, req.user!.id, req.user!.role);
-      res.json({ success: true, data: remision });
-    } catch (err) {
-      next(err);
-    }
-  };
+	getById = async (
+		req: AuthenticatedRequest,
+		res: Response,
+		next: NextFunction,
+	) => {
+		try {
+			const remision = await this.remisionUseCases.getById(
+				req.params.id,
+				req.user!.id,
+				req.user!.role,
+			);
+			res.json({
+				success: true,
+				data: remision,
+				message: "Resultado encontrado exitisamente",
+			});
+		} catch (err) {
+			next(err);
+		}
+	};
 
-  list = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const companyId = typeof req.query.companyId === 'string' ? req.query.companyId : undefined;
-      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
-      const remisiones = await this.remisionUseCases.listMine(req.user!.id, companyId, search);
-      res.json({ success: true, data: remisiones });
-    } catch (err) {
-      next(err);
-    }
-  };
+	list = async (
+		req: AuthenticatedRequest,
+		res: Response,
+		next: NextFunction,
+	) => {
+		try {
+			const companyId =
+				typeof req.query.companyId === "string"
+					? req.query.companyId
+					: undefined;
+			const search =
+				typeof req.query.search === "string" ? req.query.search : undefined;
+			const remisiones = await this.remisionUseCases.listMine(
+				req.user!.id,
+				companyId,
+				search,
+			);
+			res.json({
+				success: true,
+				data: remisiones,
+				message: "Resultados encontrados exitosamente",
+			});
+		} catch (err) {
+			next(err);
+		}
+	};
 
-  update = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      const remision = await this.remisionUseCases.update(req.params.id, req.body, req.user!.id, req.user!.role);
-      res.json({ success: true, data: remision });
-    } catch (err) {
-      next(err);
-    }
-  };
+	update = async (
+		req: AuthenticatedRequest,
+		res: Response,
+		next: NextFunction,
+	) => {
+		try {
+			const remision = await this.remisionUseCases.update(
+				req.params.id,
+				req.body,
+				req.user!.id,
+				req.user!.role,
+			);
+			res.json({
+				success: true,
+				data: remision,
+				message: "Remisión actualizada exitosamente",
+			});
+		} catch (err) {
+			next(err);
+		}
+	};
 
-  delete = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-    try {
-      await this.remisionUseCases.delete(req.params.id, req.user!.id, req.user!.role);
-      res.status(204).send();
-    } catch (err) {
-      next(err);
-    }
-  };
+	delete = async (
+		req: AuthenticatedRequest,
+		res: Response,
+		next: NextFunction,
+	) => {
+		try {
+			await this.remisionUseCases.delete(
+				req.params.id,
+				req.user!.id,
+				req.user!.role,
+			);
+			res
+				.status(204)
+				.json({ message: "Remisión eliminada exitosamente" })
+				.send();
+		} catch (err) {
+			next(err);
+		}
+	};
 }
