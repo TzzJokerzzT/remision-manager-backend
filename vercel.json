@@ -1,19 +1,19 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "version": 2,
-  "outputDirectory": ".",
-  "functions": {
-    "api/index.ts": {
-      "maxDuration": 30,
-      "memory": 1024
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/api/index"
-    }
-  ],
-  "bunVersion": "1.x",
-  "installCommand": "bun install"
+	"$schema": "https://openapi.vercel.sh/vercel.json",
+	"version": 2,
+	"outputDirectory": ".",
+	"functions": {
+		"api/index.ts": {
+			"maxDuration": 30,
+			"memory": 1024
+		}
+	},
+	"rewrites": [
+		{
+			"source": "/(.*)",
+			"destination": "/api/index"
+		}
+	],
+	"bunVersion": "1.x",
+	"installCommand": "bun install"
 }
