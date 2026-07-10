@@ -1,13 +1,13 @@
-import { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
-import { PasswordService } from "../../../infrastructure/security/password.service.js";
-import { JwtService } from "../../../infrastructure/security/jwt.service.js";
+import type { SafeUser } from "../../../domain/entities/User.js";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
 import { sha256 } from "../../../infrastructure/security/hash.util.js";
+import { JwtService } from "../../../infrastructure/security/jwt.service.js";
+import { PasswordService } from "../../../infrastructure/security/password.service.js";
 import {
 	ConflictError,
 	UnauthorizedError,
 } from "../../../shared/errors/AppError.js";
-import { RegisterDto, LoginDto } from "../../dtos/auth.dto.js";
-import { SafeUser } from "../../../domain/entities/User.js";
+import type { LoginDto, RegisterDto } from "../../dtos/auth.dto.js";
 
 function toSafeUser(user: {
 	id: string;
@@ -54,9 +54,7 @@ export class AuthUseCases {
 		},
 	) {}
 
-	async register(
-		dto: RegisterDto,
-	): Promise<{ user: SafeUser; tokens: TokenPair }> {
+	async register(dto: RegisterDto): Promise<{ user: SafeUser }> {
 		const existing = await this.userRepo.findByEmail(dto.email);
 		if (existing) throw new ConflictError("Ya existe un usuario con ese email");
 
@@ -72,8 +70,7 @@ export class AuthUseCases {
 			isActive: true,
 		});
 
-		const tokens = await this.issueTokens(user.id, user.role);
-		return { user: toSafeUser(user), tokens };
+		return { user: toSafeUser(user) };
 	}
 
 	async login(dto: LoginDto): Promise<{ user: SafeUser; tokens: TokenPair }> {
