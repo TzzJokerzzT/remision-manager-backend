@@ -12,7 +12,7 @@ export interface RemisionDocument extends Document {
 	type: RemisionType;
 	companyId: Types.ObjectId;
 	clientId: Types.ObjectId;
-	driverId: Types.ObjectId;
+	driverId?: Types.ObjectId;
 	items: RemisionItemSub[];
 	subtotal?: number;
 	ivaPercentage?: number;

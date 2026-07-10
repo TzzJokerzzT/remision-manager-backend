@@ -12,7 +12,7 @@ function toDomain(doc: RemisionDocument): Remision {
 		type: doc.type,
 		companyId: doc.companyId.toString(),
 		clientId: doc.clientId.toString(),
-		driverId: doc.driverId.toString(),
+		driverId: doc.driverId?.toString(),
 		items: doc.items,
 		subtotal: doc.subtotal,
 		ivaPercentage: doc.ivaPercentage,

@@ -11,7 +11,10 @@ export const createRemisionSchema = z
 		type: z.enum(["priced", "quantity_only"]),
 		companyId: z.string().regex(/^[a-fA-F0-9]{24}$/),
 		clientId: z.string().regex(/^[a-fA-F0-9]{24}$/),
-		driverId: z.string().regex(/^[a-fA-F0-9]{24}$/),
+		driverId: z
+			.string()
+			.regex(/^[a-fA-F0-9]{24}$/)
+			.optional(),
 		items: z.array(itemSchema).min(1),
 		ivaPercentage: z.number().min(0).max(100).optional(),
 		notes: z.string().trim().max(500).optional(),
