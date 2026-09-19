@@ -55,7 +55,8 @@ export class RemisionRepository implements IRemisionRepository {
 		ownerId: string,
 		companyId?: string,
 		search?: string,
-	): Promise<Remision[]> {
+		pagination: { limit: number; page: number } = { limit: 10, page: 1 },
+	): Promise<{ items: Remision[]; total: number }> {
 		const filter: Record<string, unknown> = { ownerId };
 		if (companyId) filter.companyId = companyId;
 		if (search && search.trim().length > 0) {
@@ -68,8 +69,12 @@ export class RemisionRepository implements IRemisionRepository {
 		} else {
 			query.sort({ createdAt: -1 });
 		}
-		const docs = await query;
-		return docs.map(toDomain);
+		const skip = (pagination.page - 1) * pagination.limit;
+		const [docs, total] = await Promise.all([
+			query.skip(skip).limit(pagination.limit),
+			RemisionModel.countDocuments(filter),
+		]);
+		return { items: docs.map(toDomain), total };
 	}
 
 	async getNextConsecutive(companyId: string): Promise<number> {

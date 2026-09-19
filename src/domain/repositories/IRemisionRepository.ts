@@ -11,6 +11,7 @@ export interface IRemisionRepository {
 		ownerId: string,
 		companyId?: string,
 		search?: string,
-	): Promise<Remision[]>;
+		pagination?: { limit: number; page: number },
+	): Promise<{ items: Remision[]; total: number }>;
 	getNextConsecutive(companyId: string): Promise<number>;
 }

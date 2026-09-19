@@ -59,10 +59,13 @@ export class RemisionController {
 					: undefined;
 			const search =
 				typeof req.query.search === "string" ? req.query.search : undefined;
+			const limit = typeof req.query.limit === "number" ? req.query.limit : 10;
+			const page = typeof req.query.page === "number" ? req.query.page : 1;
 			const remisiones = await this.remisionUseCases.listMine(
 				req.user!.id,
 				companyId,
 				search,
+				{ limit, page },
 			);
 			res.json({
 				success: true,

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
+import { paginationQuerySchema } from "../../../application/dtos/pagination.dto.js";
 import {
 	createRemisionSchema,
 	updateRemisionSchema,
@@ -16,7 +17,7 @@ export function buildRemisionRoutes(controller: RemisionController): Router {
 	router.use(authenticate);
 
 	router.post("/", validate(createRemisionSchema), controller.create);
-	router.get("/", controller.list);
+	router.get("/", validate(paginationQuerySchema, "query"), controller.list);
 	router.get("/:id", validate(idParamSchema, "params"), controller.getById);
 	router.patch(
 		"/:id",

@@ -1,35 +1,20 @@
-import type {
-	Remision,
-	RemisionItem,
-} from "../../../domain/entities/Remision.js";
+import type { Remision } from "../../../domain/entities/Remision.js";
 import type { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
 import type { IRemisionRepository } from "../../../domain/repositories/IRemisionRepository.js";
+import { computeRemisionTotals } from "../../../domain/services/remisionTotals.js";
 import {
 	ForbiddenError,
 	NotFoundError,
 } from "../../../shared/errors/AppError.js";
+import {
+	buildPaginationResponse,
+	type PaginationDTO,
+	type PaginationResponseDTO,
+} from "../../dtos/pagination.dto.js";
 import type {
 	CreateRemisionDto,
 	UpdateRemisionDto,
 } from "../../dtos/remision.dto.js";
-
-function computeTotals(
-	items: RemisionItem[],
-	type: "priced" | "quantity_only",
-	ivaPercentage?: number,
-) {
-	if (type === "quantity_only") {
-		return { subtotal: undefined, ivaValue: undefined, total: undefined };
-	}
-	const subtotal = items.reduce(
-		(acc, i) => acc + i.quantity * (i.unitPrice ?? 0),
-		0,
-	);
-	const iva = ivaPercentage ?? 0;
-	const ivaValue = +(subtotal * (iva / 100)).toFixed(2);
-	const total = +(subtotal + ivaValue).toFixed(2);
-	return { subtotal: +subtotal.toFixed(2), ivaValue, total };
-}
 
 export class RemisionUseCases {
 	constructor(
@@ -51,7 +36,11 @@ export class RemisionUseCases {
 		const consecutive = await this.remisionRepo.getNextConsecutive(
 			dto.companyId,
 		);
-		const totals = computeTotals(dto.items, dto.type, dto.ivaPercentage);
+		const totals = computeRemisionTotals(
+			dto.items,
+			dto.type,
+			dto.ivaPercentage,
+		);
 
 		return this.remisionRepo.create({
 			...dto,
@@ -76,8 +65,20 @@ export class RemisionUseCases {
 		ownerId: string,
 		companyId?: string,
 		search?: string,
-	): Promise<Remision[]> {
-		return this.remisionRepo.listByOwner(ownerId, companyId, search);
+		pagination: PaginationDTO = { limit: 10, page: 1 },
+	): Promise<PaginationResponseDTO<Remision>> {
+		const { items, total } = await this.remisionRepo.listByOwner(
+			ownerId,
+			companyId,
+			search,
+			pagination,
+		);
+		return buildPaginationResponse(
+			items,
+			total,
+			pagination.limit,
+			pagination.page,
+		);
 	}
 
 	async update(
@@ -92,7 +93,7 @@ export class RemisionUseCases {
 
 		const items = dto.items ?? remision.items;
 		const ivaPercentage = dto.ivaPercentage ?? remision.ivaPercentage;
-		const totals = computeTotals(items, remision.type, ivaPercentage);
+		const totals = computeRemisionTotals(items, remision.type, ivaPercentage);
 
 		const updated = await this.remisionRepo.update(id, { ...dto, ...totals });
 		if (!updated) throw new NotFoundError("Remisión");
