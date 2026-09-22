@@ -121,7 +121,7 @@ src/
 └── index.ts                 → Entry point
 ```
 
-> **Path aliases**: los imports usan el alias `@/*` → `src/*` (ej. `@/domain/entities/User.js`), configurado en `tsconfig.json` (`paths`). Los tests viven co-ubicados junto a su código (`*.test.ts`).
+> **Imports**: el proyecto usa **imports relativos** con extensión `.js` (ej. `../domain/entities/User.js`). Los tests viven co-ubicados junto a su código (`*.test.ts`).
 
 ---
 
@@ -338,7 +338,7 @@ GET /api/remisiones?companyId=6a399e6253da3bf3c3021049&clientName=TMR&type=price
 
 Para agregar una nueva entidad (ej. `Vehicle`) al proyecto, sigue estos pasos:
 
-> **Nota**: los ejemplos usan imports relativos por brevedad. El código real del proyecto usa el alias `@/*` → `src/*` (ej. `import type { Vehicle } from "@/domain/entities/Vehicle.js"`).
+> **Nota**: los ejemplos usan imports relativos con extensión `.js`, igual que el código real del proyecto.
 
 ### 1. Dominio — Entidad
 
@@ -588,7 +588,7 @@ Entity (domain) → Repository Interface (domain) → Mongoose Model (infra)
 - El primer usuario registrado se vuelve `admin` automáticamente; los siguientes son `user`.
 - Los modelos usan `_id` de Mongo como identificador; las entidades de dominio exponen `id: string`.
 - Los repositorios implementan interfaces del dominio, lo que permite mockearlos fácilmente en tests unitarios.
-- Los imports usan el alias `@/*` → `src/*` (definido en `tsconfig.json` bajo `compilerOptions.paths`).
+- Los imports usan rutas relativas con extensión `.js` (los path aliases se revirtieron porque Vercel no los resuelve en runtime).
 - El DTO `pagination.dto.ts` define la estructura estándar de respuesta paginada: `{ items, total, limit, page, totalPages }`.
 - El cálculo de totales de la remisión vive en `src/domain/services/remisionTotals.ts` (función pura `computeRemisionTotals`).
 - La búsqueda por nombre de cliente/conductor usa una resolución en dos pasos: regex escapado sobre `name` → ids → `$in` sobre `clientId`/`driverId`.
