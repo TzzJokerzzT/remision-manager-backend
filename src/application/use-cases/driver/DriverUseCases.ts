@@ -1,16 +1,16 @@
-import { IDriverRepository } from "@/domain/repositories/IDriverRepository.js";
-import { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
-import { Driver } from "@/domain/entities/Driver.js";
-import {
-	NotFoundError,
-	ForbiddenError,
-} from "@/shared/errors/AppError.js";
+import type {
+	CreateDriverDto,
+	UpdateDriverDto,
+} from "@/application/dtos/driver.dto.js";
 import {
 	buildPaginationResponse,
 	type PaginationDTO,
 	type PaginationResponseDTO,
 } from "@/application/dtos/pagination.dto.js";
-import { CreateDriverDto, UpdateDriverDto } from "@/application/dtos/driver.dto.js";
+import type { Driver } from "@/domain/entities/Driver.js";
+import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
+import type { IDriverRepository } from "@/domain/repositories/IDriverRepository.js";
+import { ForbiddenError, NotFoundError } from "@/shared/errors/AppError.js";
 
 export class DriverUseCases {
 	constructor(

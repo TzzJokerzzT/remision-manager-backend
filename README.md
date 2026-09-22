@@ -16,6 +16,8 @@ API REST para generador de remisiones (con precio + IVA, o solo cantidad). Const
 | Auth | JWT (access + refresh) + bcryptjs | — |
 | Seguridad | Helmet, CORS, HPP, mongo-sanitize, rate-limit | — |
 | Linter/Formatter | Biome | 2.5 |
+| Testing | Bun test | — |
+| Git hooks | Husky + commitlint | 9.x |
 | Despliegue | Vercel (serverless) | — |
 
 ---
@@ -44,6 +46,8 @@ src/
 │       ├── IClientRepository.ts
 │       ├── IDriverRepository.ts
 │       └── IRemisionRepository.ts
+│   └── services/
+│       └── remisionTotals.ts
 │
 ├── application/             → Casos de uso + DTOs (reglas de negocio)
 │   ├── use-cases/
@@ -60,7 +64,8 @@ src/
 │       ├── client.dto.ts
 │       ├── driver.dto.ts
 │       ├── remision.dto.ts
-│       └── pagination.dto.ts
+│       ├── pagination.dto.ts
+│       └── remision-list-query.dto.ts
 │
 ├── infrastructure/          → Implementaciones concretas (Mongo, JWT, bcrypt)
 │   ├── database/
@@ -110,10 +115,13 @@ src/
 │   └── container.ts
 │
 ├── shared/                  → Errores comunes, utilidades
-│   └── errors/AppError.ts
+│   ├── errors/AppError.ts
+│   └── utils/escape-regex.ts
 │
 └── index.ts                 → Entry point
 ```
+
+> **Path aliases**: los imports usan el alias `@/*` → `src/*` (ej. `@/domain/entities/User.js`), configurado en `tsconfig.json` (`paths`). Los tests viven co-ubicados junto a su código (`*.test.ts`).
 
 ---
 
@@ -184,6 +192,35 @@ bun run build    # type-check (tsc --noEmit)
 **Requisitos previos:**
 - [Bun](https://bun.sh/) instalado (v1.x)
 - MongoDB accesible (local o Atlas)
+
+---
+
+## Scripts, Testing y Linting
+
+Scripts disponibles:
+
+```bash
+bun run dev           # desarrollo con hot-reload
+bun run start         # producción
+bun run build         # type-check (tsc --noEmit)
+bun run typecheck     # alias de build (tsc --noEmit)
+bun test              # ejecutar tests (bun test)
+bun run test:watch    # tests en modo watch
+bun run test:coverage # tests con cobertura
+bun run lint          # biome check .
+bun run format        # biome format .
+```
+
+### Git Hooks (Husky)
+
+Al hacer `git commit` se ejecutan automáticamente, en este orden:
+
+1. **Typecheck** — `bun run typecheck`
+2. **Linter** — `bun run lint`
+3. **Tests** — `bun test`
+4. **Build** — `bun run build`
+
+Además, `commitlint` valida que el mensaje siga **Conventional Commits** (`feat:`, `fix:`, `chore:`, `style:`, `refactor:`, `test:`, `docs:`, etc.).
 
 ---
 
@@ -265,11 +302,43 @@ Authorization: Bearer <accessToken>
 
 El campo `consecutive` se autogenera por empresa.
 
+### Paginación y filtros
+
+Los endpoints `GET /` de empresas, clientes, conductores y remisiones soportan **paginación**:
+
+| Param | Default | Descripción |
+|---|---|---|
+| `limit` | 20 (remisiones) / 10 (empresas, clientes, conductores) | Registros por página (máx. 100) |
+| `page` | 1 | Número de página |
+
+La respuesta paginada tiene la forma `{ items, total, limit, page, totalPages }`.
+
+`GET /api/remisiones` acepta además **filtros de búsqueda** (componibles entre sí y con la paginación):
+
+| Param | Descripción |
+|---|---|
+| `search` | Búsqueda de texto sobre las **notas** de la remisión |
+| `clientName` | Substring (case-insensitive) sobre el nombre del cliente |
+| `driverName` | Substring (case-insensitive) sobre el nombre del conductor |
+| `type` | `priced` o `quantity_only` |
+| `from` / `to` | Rango sobre `createdAt` (inclusivo; `to` con solo fecha = fin de día UTC) |
+| `companyId` | Filtrar por empresa |
+
+Cada remisión en la respuesta incluye el campo `clientName`.
+
+Ejemplo:
+
+```
+GET /api/remisiones?companyId=6a399e6253da3bf3c3021049&clientName=TMR&type=priced&from=2026-01-01&to=2026-01-31&page=1&limit=10
+```
+
 ---
 
 ## Cómo Crear una Nueva Feature
 
 Para agregar una nueva entidad (ej. `Vehicle`) al proyecto, sigue estos pasos:
+
+> **Nota**: los ejemplos usan imports relativos por brevedad. El código real del proyecto usa el alias `@/*` → `src/*` (ej. `import type { Vehicle } from "@/domain/entities/Vehicle.js"`).
 
 ### 1. Dominio — Entidad
 
@@ -519,7 +588,10 @@ Entity (domain) → Repository Interface (domain) → Mongoose Model (infra)
 - El primer usuario registrado se vuelve `admin` automáticamente; los siguientes son `user`.
 - Los modelos usan `_id` de Mongo como identificador; las entidades de dominio exponen `id: string`.
 - Los repositorios implementan interfaces del dominio, lo que permite mockearlos fácilmente en tests unitarios.
+- Los imports usan el alias `@/*` → `src/*` (definido en `tsconfig.json` bajo `compilerOptions.paths`).
 - El DTO `pagination.dto.ts` define la estructura estándar de respuesta paginada: `{ items, total, limit, page, totalPages }`.
+- El cálculo de totales de la remisión vive en `src/domain/services/remisionTotals.ts` (función pura `computeRemisionTotals`).
+- La búsqueda por nombre de cliente/conductor usa una resolución en dos pasos: regex escapado sobre `name` → ids → `$in` sobre `clientId`/`driverId`.
 
 ---
 

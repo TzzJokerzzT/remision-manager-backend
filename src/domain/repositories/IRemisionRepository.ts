@@ -1,4 +1,4 @@
-import { Remision } from "@/domain/entities/Remision.js";
+import type { Remision } from "@/domain/entities/Remision.js";
 
 export interface RemisionListFilters {
 	companyId?: string;

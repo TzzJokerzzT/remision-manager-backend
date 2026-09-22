@@ -1,6 +1,9 @@
 import type { User } from "@/domain/entities/User.js";
 import type { IUserRepository } from "@/domain/repositories/IUserRepository.js";
-import { type UserDocument, UserModel } from "@/infrastructure/database/models/User.model.js";
+import {
+	type UserDocument,
+	UserModel,
+} from "@/infrastructure/database/models/User.model.js";
 
 function toDomain(doc: UserDocument): User {
 	return {

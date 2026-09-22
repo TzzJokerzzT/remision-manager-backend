@@ -2,10 +2,10 @@
 // Conventions: fake repositories (no mongoose), relative imports with .js
 // extension, no process.env/network/timers/filesystem.
 import { describe, expect, test, vi } from "bun:test";
+import { DriverUseCases } from "@/application/use-cases/driver/DriverUseCases.js";
 import type { Driver } from "@/domain/entities/Driver.js";
 import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
 import type { IDriverRepository } from "@/domain/repositories/IDriverRepository.js";
-import { DriverUseCases } from "@/application/use-cases/driver/DriverUseCases.js";
 
 const createdAt = new Date("2024-01-01T00:00:00Z");
 const updatedAt = new Date("2024-01-02T00:00:00Z");
