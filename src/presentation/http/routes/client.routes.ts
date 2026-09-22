@@ -4,6 +4,7 @@ import {
 	createClientSchema,
 	updateClientSchema,
 } from "../../../application/dtos/client.dto.js";
+import { paginationQuerySchema } from "../../../application/dtos/pagination.dto.js";
 import { mongoIdSchema } from "../../../application/dtos/user.dto.js";
 import type { ClientController } from "../controllers/client.controller.js";
 import { authenticate } from "../middlewares/authenticate.js";
@@ -16,7 +17,7 @@ export function buildClientRoutes(controller: ClientController): Router {
 	router.use(authenticate);
 
 	router.post("/", validate(createClientSchema), controller.create);
-	router.get("/", controller.list);
+	router.get("/", validate(paginationQuerySchema, "query"), controller.list);
 	router.get("/:id", validate(idParamSchema, "params"), controller.getById);
 	router.patch(
 		"/:id",

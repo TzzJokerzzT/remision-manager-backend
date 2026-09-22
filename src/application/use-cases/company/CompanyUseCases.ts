@@ -5,6 +5,11 @@ import {
 	ForbiddenError,
 	ConflictError,
 } from "../../../shared/errors/AppError.js";
+import {
+	buildPaginationResponse,
+	type PaginationDTO,
+	type PaginationResponseDTO,
+} from "../../dtos/pagination.dto.js";
 import { CreateCompanyDto, UpdateCompanyDto } from "../../dtos/company.dto.js";
 
 export class CompanyUseCases {
@@ -31,8 +36,22 @@ export class CompanyUseCases {
 		return company;
 	}
 
-	async listMine(ownerId: string, search?: string): Promise<Company[]> {
-		return this.companyRepo.listByOwner(ownerId, search);
+	async listMine(
+		ownerId: string,
+		search?: string,
+		pagination: PaginationDTO = { limit: 20, page: 1 },
+	): Promise<PaginationResponseDTO<Company>> {
+		const { items, total } = await this.companyRepo.listByOwner(
+			ownerId,
+			search,
+			pagination,
+		);
+		return buildPaginationResponse(
+			items,
+			total,
+			pagination.limit,
+			pagination.page,
+		);
 	}
 
 	async update(

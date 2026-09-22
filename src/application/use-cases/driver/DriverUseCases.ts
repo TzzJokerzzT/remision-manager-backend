@@ -5,6 +5,11 @@ import {
 	NotFoundError,
 	ForbiddenError,
 } from "../../../shared/errors/AppError.js";
+import {
+	buildPaginationResponse,
+	type PaginationDTO,
+	type PaginationResponseDTO,
+} from "../../dtos/pagination.dto.js";
 import { CreateDriverDto, UpdateDriverDto } from "../../dtos/driver.dto.js";
 
 export class DriverUseCases {
@@ -41,8 +46,20 @@ export class DriverUseCases {
 		ownerId: string,
 		companyId?: string,
 		search?: string,
-	): Promise<Driver[]> {
-		return this.driverRepo.listByOwner(ownerId, companyId, search);
+		pagination: PaginationDTO = { limit: 20, page: 1 },
+	): Promise<PaginationResponseDTO<Driver>> {
+		const { items, total } = await this.driverRepo.listByOwner(
+			ownerId,
+			companyId,
+			search,
+			pagination,
+		);
+		return buildPaginationResponse(
+			items,
+			total,
+			pagination.limit,
+			pagination.page,
+		);
 	}
 
 	async update(

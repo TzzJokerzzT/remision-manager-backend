@@ -4,6 +4,7 @@ import {
 	createDriverSchema,
 	updateDriverSchema,
 } from "../../../application/dtos/driver.dto.js";
+import { paginationQuerySchema } from "../../../application/dtos/pagination.dto.js";
 import { mongoIdSchema } from "../../../application/dtos/user.dto.js";
 import type { DriverController } from "../controllers/driver.controller.js";
 import { authenticate } from "../middlewares/authenticate.js";
@@ -16,7 +17,7 @@ export function buildDriverRoutes(controller: DriverController): Router {
 	router.use(authenticate);
 
 	router.post("/", validate(createDriverSchema), controller.create);
-	router.get("/", controller.list);
+	router.get("/", validate(paginationQuerySchema, "query"), controller.list);
 	router.get("/:id", validate(idParamSchema, "params"), controller.getById);
 	router.patch(
 		"/:id",

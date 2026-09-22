@@ -51,9 +51,12 @@ export class CompanyController {
 		try {
 			const search =
 				typeof req.query.search === "string" ? req.query.search : undefined;
+			const limit = typeof req.query.limit === "number" ? req.query.limit : 20;
+			const page = typeof req.query.page === "number" ? req.query.page : 1;
 			const companies = await this.companyUseCases.listMine(
 				req.user!.id,
 				search,
+				{ limit, page },
 			);
 			res.json({
 				success: true,
