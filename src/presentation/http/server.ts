@@ -44,10 +44,11 @@ export function createServer(): Application {
 		cors({
 			origin: (origin, callback) => {
 				// permite requests sin origin (curl, apps móviles) y los orígenes configurados
-				if (!origin || env.CORS_ORIGINS_LIST.includes(origin)) {
+				const normalized = origin ? origin.replace(/\/+$/, "") : undefined;
+				if (!normalized || env.CORS_ORIGINS_LIST.includes(normalized)) {
 					callback(null, true);
 				} else {
-					callback(new Error("No permitido por CORS"));
+					callback(null, false);
 				}
 			},
 			credentials: true,
