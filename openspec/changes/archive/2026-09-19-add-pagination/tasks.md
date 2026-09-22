@@ -43,37 +43,37 @@ Chain strategy: stacked-to-main
 
 ### Company (asymmetric: `listByOwner(ownerId, search?)` — no `companyId`)
 
-- [ ] 3.1 **RED** — Create `src/infrastructure/repositories/CompanyRepository.test.ts` with `vi.mock` of `../database/models/Company.model.js`, asserting skip/limit args and `countDocuments(filter)` against the `(ownerId, search?)` filter. Verify: fails (RED).
-- [ ] 3.2 **RED** — Create `src/application/use-cases/company/CompanyUseCases.test.ts` with a fake `ICompanyRepository`, asserting `listMine` wires `{ items, total }` → `PaginationResponseDTO<Company>`. Verify: fails (RED).
-- [ ] 3.3 **GREEN** — Change `src/domain/repositories/ICompanyRepository.ts` `listByOwner(ownerId: string, search?: string, pagination: { limit: number; page: number })` → `Promise<{ items: Company[]; total: number }>`.
-- [ ] 3.4 **GREEN** — Change `src/infrastructure/repositories/CompanyRepository.ts` `listByOwner` to apply `.skip()/.limit()` + `countDocuments(filter)` and return `{ items, total }`.
-- [ ] 3.5 **GREEN** — Change `src/application/use-cases/company/CompanyUseCases.ts` `listMine` to accept `pagination` and return `buildPaginationResponse(...)`.
-- [ ] 3.6 **GREEN** — Change `src/presentation/http/controllers/company.controller.ts` `list` to read coerced `limit`/`page` and pass pagination to `listMine`.
-- [ ] 3.7 **GREEN** — Change `src/presentation/http/routes/company.routes.ts` `GET /` to add `validate(paginationQuerySchema, "query")`.
+- [x] 3.1 **RED** — Create `src/infrastructure/repositories/CompanyRepository.test.ts` with `vi.mock` of `../database/models/Company.model.js`, asserting skip/limit args and `countDocuments(filter)` against the `(ownerId, search?)` filter. Verify: fails (RED).
+- [x] 3.2 **RED** — Create `src/application/use-cases/company/CompanyUseCases.test.ts` with a fake `ICompanyRepository`, asserting `listMine` wires `{ items, total }` → `PaginationResponseDTO<Company>`. Verify: fails (RED).
+- [x] 3.3 **GREEN** — Change `src/domain/repositories/ICompanyRepository.ts` `listByOwner(ownerId: string, search?: string, pagination: { limit: number; page: number })` → `Promise<{ items: Company[]; total: number }>`.
+- [x] 3.4 **GREEN** — Change `src/infrastructure/repositories/CompanyRepository.ts` `listByOwner` to apply `.skip()/.limit()` + `countDocuments(filter)` and return `{ items, total }`.
+- [x] 3.5 **GREEN** — Change `src/application/use-cases/company/CompanyUseCases.ts` `listMine` to accept `pagination` and return `buildPaginationResponse(...)`.
+- [x] 3.6 **GREEN** — Change `src/presentation/http/controllers/company.controller.ts` `list` to read coerced `limit`/`page` and pass pagination to `listMine`.
+- [x] 3.7 **GREEN** — Change `src/presentation/http/routes/company.routes.ts` `GET /` to add `validate(paginationQuerySchema, "query")`.
 
 ### Client (mirrors remision: `listByOwner(ownerId, companyId?, search?)`)
 
-- [ ] 3.8 **RED** — Create `src/infrastructure/repositories/ClientRepository.test.ts` with `vi.mock` of `../database/models/Client.model.js`, asserting skip/limit + `countDocuments(filter)` against the `(ownerId, companyId?, search?)` filter. Verify: fails (RED).
-- [ ] 3.9 **RED** — Create `src/application/use-cases/client/ClientUseCases.test.ts` with a fake `IClientRepository`, asserting `listMine` wires `{ items, total }` → `PaginationResponseDTO<Client>`. Verify: fails (RED).
-- [ ] 3.10 **GREEN** — Change `src/domain/repositories/IClientRepository.ts` `listByOwner(ownerId, companyId?, search?, pagination)` → `Promise<{ items: Client[]; total: number }>`.
-- [ ] 3.11 **GREEN** — Change `src/infrastructure/repositories/ClientRepository.ts` `listByOwner` to apply `.skip()/.limit()` + `countDocuments(filter)` and return `{ items, total }`.
-- [ ] 3.12 **GREEN** — Change `src/application/use-cases/client/ClientUseCases.ts` `listMine` to accept `pagination` and return `buildPaginationResponse(...)`.
-- [ ] 3.13 **GREEN** — Change `src/presentation/http/controllers/client.controller.ts` `list` to read coerced `limit`/`page` and pass pagination to `listMine`.
-- [ ] 3.14 **GREEN** — Change `src/presentation/http/routes/client.routes.ts` `GET /` to add `validate(paginationQuerySchema, "query")`.
+- [x] 3.8 **RED** — Create `src/infrastructure/repositories/ClientRepository.test.ts` with `vi.mock` of `../database/models/Client.model.js`, asserting skip/limit + `countDocuments(filter)` against the `(ownerId, companyId?, search?)` filter. Verify: fails (RED).
+- [x] 3.9 **RED** — Create `src/application/use-cases/client/ClientUseCases.test.ts` with a fake `IClientRepository`, asserting `listMine` wires `{ items, total }` → `PaginationResponseDTO<Client>`. Verify: fails (RED).
+- [x] 3.10 **GREEN** — Change `src/domain/repositories/IClientRepository.ts` `listByOwner(ownerId, companyId?, search?, pagination)` → `Promise<{ items: Client[]; total: number }>`.
+- [x] 3.11 **GREEN** — Change `src/infrastructure/repositories/ClientRepository.ts` `listByOwner` to apply `.skip()/.limit()` + `countDocuments(filter)` and return `{ items, total }`.
+- [x] 3.12 **GREEN** — Change `src/application/use-cases/client/ClientUseCases.ts` `listMine` to accept `pagination` and return `buildPaginationResponse(...)`.
+- [x] 3.13 **GREEN** — Change `src/presentation/http/controllers/client.controller.ts` `list` to read coerced `limit`/`page` and pass pagination to `listMine`.
+- [x] 3.14 **GREEN** — Change `src/presentation/http/routes/client.routes.ts` `GET /` to add `validate(paginationQuerySchema, "query")`.
 
 ### Driver (mirrors remision: `listByOwner(ownerId, companyId?, search?)`)
 
-- [ ] 3.15 **RED** — Create `src/infrastructure/repositories/DriverRepository.test.ts` with `vi.mock` of `../database/models/Driver.model.js`, asserting skip/limit + `countDocuments(filter)` against the `(ownerId, companyId?, search?)` filter. Verify: fails (RED).
-- [ ] 3.16 **RED** — Create `src/application/use-cases/driver/DriverUseCases.test.ts` with a fake `IDriverRepository`, asserting `listMine` wires `{ items, total }` → `PaginationResponseDTO<Driver>`. Verify: fails (RED).
-- [ ] 3.17 **GREEN** — Change `src/domain/repositories/IDriverRepository.ts` `listByOwner(ownerId, companyId?, search?, pagination)` → `Promise<{ items: Driver[]; total: number }>`.
-- [ ] 3.18 **GREEN** — Change `src/infrastructure/repositories/DriverRepository.ts` `listByOwner` to apply `.skip()/.limit()` + `countDocuments(filter)` and return `{ items, total }`.
-- [ ] 3.19 **GREEN** — Change `src/application/use-cases/driver/DriverUseCases.ts` `listMine` to accept `pagination` and return `buildPaginationResponse(...)`.
-- [ ] 3.20 **GREEN** — Change `src/presentation/http/controllers/driver.controller.ts` `list` to read coerced `limit`/`page` and pass pagination to `listMine`.
-- [ ] 3.21 **GREEN** — Change `src/presentation/http/routes/driver.routes.ts` `GET /` to add `validate(paginationQuerySchema, "query")`.
+- [x] 3.15 **RED** — Create `src/infrastructure/repositories/DriverRepository.test.ts` with `vi.mock` of `../database/models/Driver.model.js`, asserting skip/limit + `countDocuments(filter)` against the `(ownerId, companyId?, search?)` filter. Verify: fails (RED).
+- [x] 3.16 **RED** — Create `src/application/use-cases/driver/DriverUseCases.test.ts` with a fake `IDriverRepository`, asserting `listMine` wires `{ items, total }` → `PaginationResponseDTO<Driver>`. Verify: fails (RED).
+- [x] 3.17 **GREEN** — Change `src/domain/repositories/IDriverRepository.ts` `listByOwner(ownerId, companyId?, search?, pagination)` → `Promise<{ items: Driver[]; total: number }>`.
+- [x] 3.18 **GREEN** — Change `src/infrastructure/repositories/DriverRepository.ts` `listByOwner` to apply `.skip()/.limit()` + `countDocuments(filter)` and return `{ items, total }`.
+- [x] 3.19 **GREEN** — Change `src/application/use-cases/driver/DriverUseCases.ts` `listMine` to accept `pagination` and return `buildPaginationResponse(...)`.
+- [x] 3.20 **GREEN** — Change `src/presentation/http/controllers/driver.controller.ts` `list` to read coerced `limit`/`page` and pass pagination to `listMine`.
+- [x] 3.21 **GREEN** — Change `src/presentation/http/routes/driver.routes.ts` `GET /` to add `validate(paginationQuerySchema, "query")`.
 
 ## Phase 4: Verification
 
-- [ ] 4.1 Run `bun test` — all new and existing unit tests pass (DTO schema, `totalPages` math, 4 repository skip/limit + count, 4 use-case wiring).
-- [ ] 4.2 Run `bun run build` — no TypeScript errors across the 4 modified interfaces and every consumer (repositories, use cases, controllers, routes).
-- [ ] 4.3 Run `biome check .` — lint clean on the modified/new files (no unused imports from the signature changes).
-- [ ] 4.4 Trace each scenario in `openspec/changes/add-pagination/specs/api-pagination/spec.md` (read-only) to a passing test: query validation (4 rejection scenarios + defaults + `.max(100)`), repository page slice / independent `total` / empty result / page-beyond-last, `totalPages` math (exact, remainder, zero, single page), and filter-composition (`search`/`companyId` preserved via `.passthrough()` and same-filter `countDocuments`).
+- [x] 4.1 Run `bun test` — all new and existing unit tests pass (DTO schema, `totalPages` math, 4 repository skip/limit + count, 4 use-case wiring).
+- [x] 4.2 Run `bun run build` — no TypeScript errors across the 4 modified interfaces and every consumer (repositories, use cases, controllers, routes).
+- [x] 4.3 Run `biome check .` — lint clean on the modified/new files (no unused imports from the signature changes).
+- [x] 4.4 Trace each scenario in `openspec/changes/add-pagination/specs/api-pagination/spec.md` (read-only) to a passing test: query validation (4 rejection scenarios + defaults + `.max(100)`), repository page slice / independent `total` / empty result / page-beyond-last, `totalPages` math (exact, remainder, zero, single page), and filter-composition (`search`/`companyId` preserved via `.passthrough()` and same-filter `countDocuments`).
