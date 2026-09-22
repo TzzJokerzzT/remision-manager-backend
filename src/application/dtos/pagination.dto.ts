@@ -18,7 +18,7 @@ export interface PaginationResponseDTO<T> {
 // default strip mode would drop the pre-existing `search`/`companyId` keys.
 export const paginationQuerySchema = z
 	.object({
-		limit: z.coerce.number().int().positive().max(100).default(20),
+		limit: z.coerce.number().int().positive().max(100).default(10),
 		page: z.coerce.number().int().positive().default(1),
 	})
 	.passthrough();
