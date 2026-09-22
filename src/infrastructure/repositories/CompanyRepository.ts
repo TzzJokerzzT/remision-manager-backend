@@ -1,9 +1,9 @@
-import type { Company } from "@/domain/entities/Company.js";
-import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
+import type { Company } from "../../domain/entities/Company.js";
+import type { ICompanyRepository } from "../../domain/repositories/ICompanyRepository.js";
 import {
 	type CompanyDocument,
 	CompanyModel,
-} from "@/infrastructure/database/models/Company.model.js";
+} from "../database/models/Company.model.js";
 
 function toDomain(doc: CompanyDocument): Company {
 	return {

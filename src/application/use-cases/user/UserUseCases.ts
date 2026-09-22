@@ -1,7 +1,10 @@
-import type { UpdateUserDto } from "@/application/dtos/user.dto.js";
-import type { SafeUser, User } from "@/domain/entities/User.js";
-import type { IUserRepository } from "@/domain/repositories/IUserRepository.js";
-import { ForbiddenError, NotFoundError } from "@/shared/errors/AppError.js";
+import type { SafeUser, User } from "../../../domain/entities/User.js";
+import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
+import {
+	ForbiddenError,
+	NotFoundError,
+} from "../../../shared/errors/AppError.js";
+import type { UpdateUserDto } from "../../dtos/user.dto.js";
 
 function toSafeUser(user: User): SafeUser {
 	const {

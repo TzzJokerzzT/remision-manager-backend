@@ -3,16 +3,16 @@
 // network/filesystem; relative imports with .js extension.
 import { beforeEach, describe, expect, test, vi } from "bun:test";
 
-vi.mock("@/infrastructure/database/models/Company.model.js", () => ({
+vi.mock("../database/models/Company.model.js", () => ({
 	CompanyModel: {
 		find: vi.fn(),
 		countDocuments: vi.fn(),
 	},
 }));
 
-import type { Company } from "@/domain/entities/Company.js";
-import { CompanyModel } from "@/infrastructure/database/models/Company.model.js";
-import { CompanyRepository } from "@/infrastructure/repositories/CompanyRepository.js";
+import type { Company } from "../../domain/entities/Company.js";
+import { CompanyModel } from "../database/models/Company.model.js";
+import { CompanyRepository } from "./CompanyRepository.js";
 
 const findMock = CompanyModel.find as unknown as ReturnType<typeof vi.fn>;
 const countDocumentsMock = CompanyModel.countDocuments as unknown as ReturnType<

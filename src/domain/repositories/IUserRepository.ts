@@ -1,4 +1,4 @@
-import type { User } from "@/domain/entities/User.js";
+import type { User } from "../entities/User.js";
 
 export interface IUserRepository {
 	create(data: Omit<User, "id" | "createdAt" | "updatedAt">): Promise<User>;

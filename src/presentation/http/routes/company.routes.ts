@@ -3,12 +3,12 @@ import { z } from "zod";
 import {
 	createCompanySchema,
 	updateCompanySchema,
-} from "@/application/dtos/company.dto.js";
-import { paginationQuerySchema } from "@/application/dtos/pagination.dto.js";
-import { mongoIdSchema } from "@/application/dtos/user.dto.js";
-import type { CompanyController } from "@/presentation/http/controllers/company.controller.js";
-import { authenticate } from "@/presentation/http/middlewares/authenticate.js";
-import { validate } from "@/presentation/http/middlewares/validate.js";
+} from "../../../application/dtos/company.dto.js";
+import { paginationQuerySchema } from "../../../application/dtos/pagination.dto.js";
+import { mongoIdSchema } from "../../../application/dtos/user.dto.js";
+import type { CompanyController } from "../controllers/company.controller.js";
+import { authenticate } from "../middlewares/authenticate.js";
+import { validate } from "../middlewares/validate.js";
 
 export function buildCompanyRoutes(controller: CompanyController): Router {
 	const router = Router();

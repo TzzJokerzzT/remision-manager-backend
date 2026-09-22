@@ -3,11 +3,7 @@
 // safeParse (never throw-expected for negative tests); no mongoose, no
 // process.env, no network/timers/filesystem.
 import { describe, expect, test } from "bun:test";
-import {
-	loginSchema,
-	refreshSchema,
-	registerSchema,
-} from "@/application/dtos/auth.dto.js";
+import { loginSchema, refreshSchema, registerSchema } from "./auth.dto.js";
 
 describe("auth DTO schemas", () => {
 	test("registerSchema accepts valid registration", () => {

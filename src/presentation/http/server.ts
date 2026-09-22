@@ -5,7 +5,7 @@ import helmet from "helmet";
 import hpp from "hpp";
 import morgan from "morgan";
 
-import { env } from "@/config/env.js";
+import { env } from "../../config/env.js";
 import {
 	authController,
 	clientController,
@@ -13,19 +13,16 @@ import {
 	driverController,
 	remisionController,
 	userController,
-} from "@/di/container.js";
-import { connectDatabase } from "@/infrastructure/database/mongoose.js";
-import {
-	errorHandler,
-	notFoundHandler,
-} from "@/presentation/http/middlewares/errorHandler.js";
-import { generalLimiter } from "@/presentation/http/middlewares/rateLimiter.js";
-import { buildAuthRoutes } from "@/presentation/http/routes/auth.routes.js";
-import { buildClientRoutes } from "@/presentation/http/routes/client.routes.js";
-import { buildCompanyRoutes } from "@/presentation/http/routes/company.routes.js";
-import { buildDriverRoutes } from "@/presentation/http/routes/driver.routes.js";
-import { buildRemisionRoutes } from "@/presentation/http/routes/remision.routes.js";
-import { buildUserRoutes } from "@/presentation/http/routes/user.routes.js";
+} from "../../di/container.js";
+import { connectDatabase } from "../../infrastructure/database/mongoose.js";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
+import { generalLimiter } from "./middlewares/rateLimiter.js";
+import { buildAuthRoutes } from "./routes/auth.routes.js";
+import { buildClientRoutes } from "./routes/client.routes.js";
+import { buildCompanyRoutes } from "./routes/company.routes.js";
+import { buildDriverRoutes } from "./routes/driver.routes.js";
+import { buildRemisionRoutes } from "./routes/remision.routes.js";
+import { buildUserRoutes } from "./routes/user.routes.js";
 
 export function createServer(): Application {
 	const app = express();

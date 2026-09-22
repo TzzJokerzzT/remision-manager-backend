@@ -2,13 +2,13 @@
 // Conventions: fake repositories (no mongoose), relative imports with .js
 // extension, no process.env/network/timers/filesystem.
 import { describe, expect, test, vi } from "bun:test";
-import { RemisionUseCases } from "@/application/use-cases/remision/RemisionUseCases.js";
-import type { Client } from "@/domain/entities/Client.js";
-import type { Remision } from "@/domain/entities/Remision.js";
-import type { IClientRepository } from "@/domain/repositories/IClientRepository.js";
-import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
-import type { IDriverRepository } from "@/domain/repositories/IDriverRepository.js";
-import type { IRemisionRepository } from "@/domain/repositories/IRemisionRepository.js";
+import type { Client } from "../../../domain/entities/Client.js";
+import type { Remision } from "../../../domain/entities/Remision.js";
+import type { IClientRepository } from "../../../domain/repositories/IClientRepository.js";
+import type { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
+import type { IDriverRepository } from "../../../domain/repositories/IDriverRepository.js";
+import type { IRemisionRepository } from "../../../domain/repositories/IRemisionRepository.js";
+import { RemisionUseCases } from "./RemisionUseCases.js";
 
 const createdAt = new Date("2024-01-01T00:00:00Z");
 const updatedAt = new Date("2024-01-02T00:00:00Z");

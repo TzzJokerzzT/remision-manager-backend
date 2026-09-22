@@ -1,4 +1,4 @@
-import type { Company } from "@/domain/entities/Company.js";
+import type { Company } from "../entities/Company.js";
 
 export interface ICompanyRepository {
 	create(

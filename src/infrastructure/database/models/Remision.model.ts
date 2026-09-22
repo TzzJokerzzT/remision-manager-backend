@@ -1,5 +1,5 @@
 import { type Document, model, Schema, type Types } from "mongoose";
-import type { RemisionType } from "@/domain/entities/Remision.js";
+import type { RemisionType } from "../../../domain/entities/Remision.js";
 
 interface RemisionItemSub {
 	description: string;
