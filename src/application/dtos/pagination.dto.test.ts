@@ -19,12 +19,12 @@ describe("paginationQuerySchema", () => {
 		}
 	});
 
-	test("defaults limit to 20 and page to 1 when absent", () => {
+	test("defaults limit to 10 and page to 1 when absent", () => {
 		const result = paginationQuerySchema.safeParse({});
 
 		expect(result.success).toBe(true);
 		if (result.success) {
-			expect(result.data.limit).toBe(20);
+			expect(result.data.limit).toBe(10);
 			expect(result.data.page).toBe(1);
 		}
 	});

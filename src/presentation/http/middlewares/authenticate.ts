@@ -8,12 +8,13 @@ export interface AuthenticatedRequest extends Request {
 
 export function authenticate(
 	req: AuthenticatedRequest,
-	res: Response,
+	_res: Response,
 	next: NextFunction,
 ): void {
 	const header = req.headers.authorization;
 	if (!header || !header.startsWith("Bearer ")) {
-		return next(new UnauthorizedError("Token no proporcionado"));
+		next(new UnauthorizedError("Token no proporcionado"));
+		return;
 	}
 	const token = header.slice(7);
 	try {

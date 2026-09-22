@@ -1,16 +1,19 @@
-import { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
-import { Company } from "@/domain/entities/Company.js";
-import {
-	NotFoundError,
-	ForbiddenError,
-	ConflictError,
-} from "@/shared/errors/AppError.js";
+import type {
+	CreateCompanyDto,
+	UpdateCompanyDto,
+} from "@/application/dtos/company.dto.js";
 import {
 	buildPaginationResponse,
 	type PaginationDTO,
 	type PaginationResponseDTO,
 } from "@/application/dtos/pagination.dto.js";
-import { CreateCompanyDto, UpdateCompanyDto } from "@/application/dtos/company.dto.js";
+import type { Company } from "@/domain/entities/Company.js";
+import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
+import {
+	ConflictError,
+	ForbiddenError,
+	NotFoundError,
+} from "@/shared/errors/AppError.js";
 
 export class CompanyUseCases {
 	constructor(private readonly companyRepo: ICompanyRepository) {}

@@ -25,7 +25,11 @@ export function errorHandler(
 	}
 
 	// Errores de duplicado de Mongo (índice unique)
-	if (typeof err === "object" && err !== null && (err as any).code === 11000) {
+	if (
+		typeof err === "object" &&
+		err !== null &&
+		(err as { code?: number }).code === 11000
+	) {
 		res.status(409).json({
 			success: false,
 			message: "El recurso ya existe (valor duplicado)",

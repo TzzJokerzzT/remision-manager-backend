@@ -15,7 +15,10 @@ import {
 	userController,
 } from "@/di/container.js";
 import { connectDatabase } from "@/infrastructure/database/mongoose.js";
-import { errorHandler, notFoundHandler } from "@/presentation/http/middlewares/errorHandler.js";
+import {
+	errorHandler,
+	notFoundHandler,
+} from "@/presentation/http/middlewares/errorHandler.js";
 import { generalLimiter } from "@/presentation/http/middlewares/rateLimiter.js";
 import { buildAuthRoutes } from "@/presentation/http/routes/auth.routes.js";
 import { buildClientRoutes } from "@/presentation/http/routes/client.routes.js";
