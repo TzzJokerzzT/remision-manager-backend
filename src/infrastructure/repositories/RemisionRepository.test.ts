@@ -1,4 +1,4 @@
-// Co-located unit tests for RemisionRepository.listByOwner pagination.
+// Co-located unit tests for RemisionRepository.listByOwner filtering.
 // Conventions: bun:test + vi.mock of the Mongoose model; no real DB, no
 // network/filesystem; relative imports with .js extension.
 import { beforeEach, describe, expect, test, vi } from "bun:test";
@@ -89,10 +89,11 @@ describe("RemisionRepository.listByOwner", () => {
 		countDocumentsMock.mockResolvedValue(45);
 
 		const repo = new RemisionRepository();
-		const result = await repo.listByOwner("owner1", "compX", undefined, {
-			limit: 20,
-			page: 2,
-		});
+		const result = await repo.listByOwner(
+			"owner1",
+			{ companyId: "compX" },
+			{ limit: 20, page: 2 },
+		);
 
 		expect(findMock).toHaveBeenCalledWith({
 			ownerId: "owner1",
@@ -116,7 +117,7 @@ describe("RemisionRepository.listByOwner", () => {
 		countDocumentsMock.mockResolvedValue(1);
 
 		const repo = new RemisionRepository();
-		await repo.listByOwner("owner1", undefined, "foo", { limit: 20, page: 1 });
+		await repo.listByOwner("owner1", { search: "foo" }, { limit: 20, page: 1 });
 
 		const filter = { ownerId: "owner1", $text: { $search: "foo" } };
 		expect(findMock).toHaveBeenCalledWith(filter);
@@ -133,7 +134,7 @@ describe("RemisionRepository.listByOwner", () => {
 		countDocumentsMock.mockResolvedValue(0);
 
 		const repo = new RemisionRepository();
-		const result = await repo.listByOwner("owner1", undefined, undefined, {
+		const result = await repo.listByOwner("owner1", undefined, {
 			limit: 20,
 			page: 1,
 		});
@@ -147,11 +148,131 @@ describe("RemisionRepository.listByOwner", () => {
 		countDocumentsMock.mockResolvedValue(10);
 
 		const repo = new RemisionRepository();
-		const result = await repo.listByOwner("owner1", undefined, undefined, {
+		const result = await repo.listByOwner("owner1", undefined, {
 			limit: 20,
 			page: 3,
 		});
 
 		expect(result).toEqual({ items: [], total: 10 });
+	});
+
+	test("clientIds empty array produces clientId $in [] (not omitted)", async () => {
+		const query = makeQuery([]);
+		findMock.mockReturnValue(query);
+		countDocumentsMock.mockResolvedValue(0);
+
+		const repo = new RemisionRepository();
+		await repo.listByOwner("owner1", { clientIds: [] }, { limit: 20, page: 1 });
+
+		const expectedFilter = { ownerId: "owner1", clientId: { $in: [] } };
+		expect(findMock).toHaveBeenCalledWith(expectedFilter);
+		expect(countDocumentsMock).toHaveBeenCalledWith(expectedFilter);
+	});
+
+	test("driverIds produces driverId $in", async () => {
+		const query = makeQuery([]);
+		findMock.mockReturnValue(query);
+		countDocumentsMock.mockResolvedValue(0);
+
+		const repo = new RemisionRepository();
+		await repo.listByOwner(
+			"owner1",
+			{ driverIds: ["drv1", "drv2"] },
+			{ limit: 20, page: 1 },
+		);
+
+		const expectedFilter = {
+			ownerId: "owner1",
+			driverId: { $in: ["drv1", "drv2"] },
+		};
+		expect(findMock).toHaveBeenCalledWith(expectedFilter);
+		expect(countDocumentsMock).toHaveBeenCalledWith(expectedFilter);
+	});
+
+	test("type sets filter.type", async () => {
+		const query = makeQuery([]);
+		findMock.mockReturnValue(query);
+		countDocumentsMock.mockResolvedValue(0);
+
+		const repo = new RemisionRepository();
+		await repo.listByOwner(
+			"owner1",
+			{ type: "priced" },
+			{ limit: 20, page: 1 },
+		);
+
+		const expectedFilter = { ownerId: "owner1", type: "priced" };
+		expect(findMock).toHaveBeenCalledWith(expectedFilter);
+		expect(countDocumentsMock).toHaveBeenCalledWith(expectedFilter);
+	});
+
+	test("from and to set createdAt $gte and $lte", async () => {
+		const query = makeQuery([]);
+		findMock.mockReturnValue(query);
+		countDocumentsMock.mockResolvedValue(0);
+
+		const from = new Date("2026-01-01T00:00:00Z");
+		const to = new Date("2026-01-31T23:59:59.999Z");
+		const repo = new RemisionRepository();
+		await repo.listByOwner("owner1", { from, to }, { limit: 20, page: 1 });
+
+		const expectedFilter = {
+			ownerId: "owner1",
+			createdAt: { $gte: from, $lte: to },
+		};
+		expect(findMock).toHaveBeenCalledWith(expectedFilter);
+		expect(countDocumentsMock).toHaveBeenCalledWith(expectedFilter);
+	});
+
+	test("from only sets createdAt $gte", async () => {
+		const query = makeQuery([]);
+		findMock.mockReturnValue(query);
+		countDocumentsMock.mockResolvedValue(0);
+
+		const from = new Date("2026-01-01T00:00:00Z");
+		const repo = new RemisionRepository();
+		await repo.listByOwner("owner1", { from }, { limit: 20, page: 1 });
+
+		const expectedFilter = {
+			ownerId: "owner1",
+			createdAt: { $gte: from },
+		};
+		expect(findMock).toHaveBeenCalledWith(expectedFilter);
+		expect(countDocumentsMock).toHaveBeenCalledWith(expectedFilter);
+	});
+
+	test("composes all filters (companyId + search + clientIds + driverIds + type + date)", async () => {
+		const query = makeQuery([]);
+		findMock.mockReturnValue(query);
+		countDocumentsMock.mockResolvedValue(0);
+
+		const from = new Date("2026-01-01T00:00:00Z");
+		const to = new Date("2026-01-31T23:59:59.999Z");
+		const repo = new RemisionRepository();
+		await repo.listByOwner(
+			"owner1",
+			{
+				companyId: "compX",
+				search: "foo",
+				clientIds: ["cli1"],
+				driverIds: ["drv1"],
+				type: "quantity_only",
+				from,
+				to,
+			},
+			{ limit: 20, page: 1 },
+		);
+
+		const expectedFilter = {
+			ownerId: "owner1",
+			companyId: "compX",
+			$text: { $search: "foo" },
+			clientId: { $in: ["cli1"] },
+			driverId: { $in: ["drv1"] },
+			type: "quantity_only",
+			createdAt: { $gte: from, $lte: to },
+		};
+		expect(findMock).toHaveBeenCalledWith(expectedFilter);
+		expect(countDocumentsMock).toHaveBeenCalledWith(expectedFilter);
 	});
 });

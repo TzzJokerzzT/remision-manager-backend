@@ -1,32 +1,38 @@
-import type { Remision } from "../../../domain/entities/Remision.js";
-import type { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
-import type { IRemisionRepository } from "../../../domain/repositories/IRemisionRepository.js";
-import { computeRemisionTotals } from "../../../domain/services/remisionTotals.js";
-import {
-	ForbiddenError,
-	NotFoundError,
-} from "../../../shared/errors/AppError.js";
 import {
 	buildPaginationResponse,
-	type PaginationDTO,
 	type PaginationResponseDTO,
 } from "../../dtos/pagination.dto.js";
 import type {
 	CreateRemisionDto,
 	UpdateRemisionDto,
 } from "../../dtos/remision.dto.js";
+import type { RemisionListQueryDTO } from "../../dtos/remision-list-query.dto.js";
+import type { Remision } from "../../../domain/entities/Remision.js";
+import type { IClientRepository } from "../../../domain/repositories/IClientRepository.js";
+import type { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
+import type { IDriverRepository } from "../../../domain/repositories/IDriverRepository.js";
+import type {
+	IRemisionRepository,
+	RemisionListFilters,
+} from "../../../domain/repositories/IRemisionRepository.js";
+import { computeRemisionTotals } from "../../../domain/services/remisionTotals.js";
+import { ForbiddenError, NotFoundError } from "../../../shared/errors/AppError.js";
+
+export type RemisionWithClient = Remision & { clientName: string };
 
 export class RemisionUseCases {
 	constructor(
 		private readonly remisionRepo: IRemisionRepository,
 		private readonly companyRepo: ICompanyRepository,
+		private readonly clientRepo: IClientRepository,
+		private readonly driverRepo: IDriverRepository,
 	) {}
 
 	async create(
 		dto: CreateRemisionDto,
 		ownerId: string,
 		role: "admin" | "user",
-	): Promise<Remision> {
+	): Promise<RemisionWithClient> {
 		const company = await this.companyRepo.findById(dto.companyId);
 		if (!company) throw new NotFoundError("Empresa");
 		if (role !== "admin" && company.ownerId !== ownerId) {
@@ -42,43 +48,79 @@ export class RemisionUseCases {
 			dto.ivaPercentage,
 		);
 
-		return this.remisionRepo.create({
+		const created = await this.remisionRepo.create({
 			...dto,
 			consecutive,
 			ownerId,
 			...totals,
 		});
+		const client = await this.clientRepo.findById(dto.clientId);
+		return { ...created, clientName: client?.name ?? "" };
 	}
 
 	async getById(
 		id: string,
 		requesterId: string,
 		role: "admin" | "user",
-	): Promise<Remision> {
+	): Promise<RemisionWithClient> {
 		const remision = await this.remisionRepo.findById(id);
 		if (!remision) throw new NotFoundError("Remisión");
 		this.assertOwnership(remision, requesterId, role);
-		return remision;
+		const client = await this.clientRepo.findById(remision.clientId);
+		return { ...remision, clientName: client?.name ?? "" };
 	}
 
 	async listMine(
 		ownerId: string,
-		companyId?: string,
-		search?: string,
-		pagination: PaginationDTO = { limit: 10, page: 1 },
-	): Promise<PaginationResponseDTO<Remision>> {
-		const { items, total } = await this.remisionRepo.listByOwner(
-			ownerId,
+		query: Partial<RemisionListQueryDTO> = {},
+	): Promise<PaginationResponseDTO<RemisionWithClient>> {
+		const {
 			companyId,
 			search,
-			pagination,
+			clientName,
+			driverName,
+			type,
+			from,
+			to,
+			limit = 20,
+			page = 1,
+		} = query;
+
+		// Resolve names → ids. `undefined` = "filter not supplied";
+		// `[]` = "supplied but no matches" (⇒ `$in: []` ⇒ empty result).
+		const clientIds =
+			clientName !== undefined
+				? await this.clientRepo.findIdsByName(clientName)
+				: undefined;
+		const driverIds =
+			driverName !== undefined
+				? await this.driverRepo.findIdsByName(driverName)
+				: undefined;
+
+		const filters: RemisionListFilters = {
+			companyId,
+			search,
+			clientIds,
+			driverIds,
+			type,
+			from,
+			to,
+		};
+		const { items, total } = await this.remisionRepo.listByOwner(
+			ownerId,
+			filters,
+			{ limit, page },
 		);
-		return buildPaginationResponse(
-			items,
-			total,
-			pagination.limit,
-			pagination.page,
-		);
+
+		// Unchanged enrichment path.
+		const clientIdsSet = [...new Set(items.map((i) => i.clientId))];
+		const clients = await this.clientRepo.findByIds(clientIdsSet);
+		const nameById = new Map(clients.map((c) => [c.id, c.name]));
+		const enriched = items.map((item) => ({
+			...item,
+			clientName: nameById.get(item.clientId) ?? "",
+		}));
+		return buildPaginationResponse(enriched, total, limit, page);
 	}
 
 	async update(
@@ -86,7 +128,7 @@ export class RemisionUseCases {
 		dto: UpdateRemisionDto,
 		requesterId: string,
 		role: "admin" | "user",
-	): Promise<Remision> {
+	): Promise<RemisionWithClient> {
 		const remision = await this.remisionRepo.findById(id);
 		if (!remision) throw new NotFoundError("Remisión");
 		this.assertOwnership(remision, requesterId, role);
@@ -97,7 +139,8 @@ export class RemisionUseCases {
 
 		const updated = await this.remisionRepo.update(id, { ...dto, ...totals });
 		if (!updated) throw new NotFoundError("Remisión");
-		return updated;
+		const client = await this.clientRepo.findById(remision.clientId);
+		return { ...updated, clientName: client?.name ?? "" };
 	}
 
 	async delete(

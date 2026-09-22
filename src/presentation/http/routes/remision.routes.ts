@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { z } from "zod";
-import { paginationQuerySchema } from "../../../application/dtos/pagination.dto.js";
 import {
 	createRemisionSchema,
 	updateRemisionSchema,
 } from "../../../application/dtos/remision.dto.js";
+import { remisionListQuerySchema } from "../../../application/dtos/remision-list-query.dto.js";
 import { mongoIdSchema } from "../../../application/dtos/user.dto.js";
 import type { RemisionController } from "../controllers/remision.controller.js";
 import { authenticate } from "../middlewares/authenticate.js";
@@ -17,7 +17,7 @@ export function buildRemisionRoutes(controller: RemisionController): Router {
 	router.use(authenticate);
 
 	router.post("/", validate(createRemisionSchema), controller.create);
-	router.get("/", validate(paginationQuerySchema, "query"), controller.list);
+	router.get("/", validate(remisionListQuerySchema, "query"), controller.list);
 	router.get("/:id", validate(idParamSchema, "params"), controller.getById);
 	router.patch(
 		"/:id",

@@ -1,5 +1,8 @@
 import type { Remision } from "../../domain/entities/Remision.js";
-import type { IRemisionRepository } from "../../domain/repositories/IRemisionRepository.js";
+import type {
+	IRemisionRepository,
+	RemisionListFilters,
+} from "../../domain/repositories/IRemisionRepository.js";
 import {
 	type RemisionDocument,
 	RemisionModel,
@@ -53,14 +56,25 @@ export class RemisionRepository implements IRemisionRepository {
 
 	async listByOwner(
 		ownerId: string,
-		companyId?: string,
-		search?: string,
-		pagination: { limit: number; page: number } = { limit: 10, page: 1 },
+		filters: RemisionListFilters = {},
+		pagination: { limit: number; page: number } = { limit: 20, page: 1 },
 	): Promise<{ items: Remision[]; total: number }> {
+		const { companyId, search, clientIds, driverIds, type, from, to } = filters;
 		const filter: Record<string, unknown> = { ownerId };
 		if (companyId) filter.companyId = companyId;
 		if (search && search.trim().length > 0) {
 			filter.$text = { $search: search.trim() };
+		}
+		// CRITICAL: guard on `!== undefined`, NOT `length > 0`. An empty array
+		// means "no name match" and MUST produce `$in: []` (matches nothing).
+		if (clientIds !== undefined) filter.clientId = { $in: clientIds };
+		if (driverIds !== undefined) filter.driverId = { $in: driverIds };
+		if (type !== undefined) filter.type = type;
+		if (from !== undefined || to !== undefined) {
+			const createdAt: { $gte?: Date; $lte?: Date } = {};
+			if (from !== undefined) createdAt.$gte = from;
+			if (to !== undefined) createdAt.$lte = to;
+			filter.createdAt = createdAt;
 		}
 		const query = RemisionModel.find(filter);
 		if (search && search.trim().length > 0) {

@@ -34,6 +34,8 @@ const driverUseCases = new DriverUseCases(driverRepository, companyRepository);
 const remisionUseCases = new RemisionUseCases(
 	remisionRepository,
 	companyRepository,
+	clientRepository,
+	driverRepository,
 );
 
 // Controladores (presentación)
