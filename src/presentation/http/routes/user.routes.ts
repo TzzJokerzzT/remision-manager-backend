@@ -3,11 +3,11 @@ import { z } from "zod";
 import {
 	mongoIdSchema,
 	updateUserSchema,
-} from "@/application/dtos/user.dto.js";
-import type { UserController } from "@/presentation/http/controllers/user.controller.js";
-import { authenticate } from "@/presentation/http/middlewares/authenticate.js";
-import { authorize } from "@/presentation/http/middlewares/authorize.js";
-import { validate } from "@/presentation/http/middlewares/validate.js";
+} from "../../../application/dtos/user.dto.js";
+import type { UserController } from "../controllers/user.controller.js";
+import { authenticate } from "../middlewares/authenticate.js";
+import { authorize } from "../middlewares/authorize.js";
+import { validate } from "../middlewares/validate.js";
 
 export function buildUserRoutes(controller: UserController): Router {
 	const router = Router();

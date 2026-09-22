@@ -1,10 +1,10 @@
-import type { Client } from "@/domain/entities/Client.js";
-import type { IClientRepository } from "@/domain/repositories/IClientRepository.js";
+import type { Client } from "../../domain/entities/Client.js";
+import type { IClientRepository } from "../../domain/repositories/IClientRepository.js";
+import { escapeRegex } from "../../shared/utils/escape-regex.js";
 import {
 	type ClientDocument,
 	ClientModel,
-} from "@/infrastructure/database/models/Client.model.js";
-import { escapeRegex } from "@/shared/utils/escape-regex.js";
+} from "../database/models/Client.model.js";
 
 function toDomain(doc: ClientDocument): Client {
 	return {

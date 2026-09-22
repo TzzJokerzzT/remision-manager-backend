@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import { JwtService } from "@/infrastructure/security/jwt.service.js";
-import { UnauthorizedError } from "@/shared/errors/AppError.js";
+import { JwtService } from "../../../infrastructure/security/jwt.service.js";
+import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 
 export interface AuthenticatedRequest extends Request {
 	user?: { id: string; role: "admin" | "user" };

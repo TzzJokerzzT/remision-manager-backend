@@ -1,21 +1,21 @@
-import { AuthUseCases } from "@/application/use-cases/auth/AuthUseCases.js";
-import { ClientUseCases } from "@/application/use-cases/client/ClientUseCases.js";
-import { CompanyUseCases } from "@/application/use-cases/company/CompanyUseCases.js";
-import { DriverUseCases } from "@/application/use-cases/driver/DriverUseCases.js";
-import { RemisionUseCases } from "@/application/use-cases/remision/RemisionUseCases.js";
-import { UserUseCases } from "@/application/use-cases/user/UserUseCases.js";
-import { ClientRepository } from "@/infrastructure/repositories/ClientRepository.js";
-import { CompanyRepository } from "@/infrastructure/repositories/CompanyRepository.js";
-import { DriverRepository } from "@/infrastructure/repositories/DriverRepository.js";
-import { RemisionRepository } from "@/infrastructure/repositories/RemisionRepository.js";
-import { UserRepository } from "@/infrastructure/repositories/UserRepository.js";
+import { AuthUseCases } from "../application/use-cases/auth/AuthUseCases.js";
+import { ClientUseCases } from "../application/use-cases/client/ClientUseCases.js";
+import { CompanyUseCases } from "../application/use-cases/company/CompanyUseCases.js";
+import { DriverUseCases } from "../application/use-cases/driver/DriverUseCases.js";
+import { RemisionUseCases } from "../application/use-cases/remision/RemisionUseCases.js";
+import { UserUseCases } from "../application/use-cases/user/UserUseCases.js";
+import { ClientRepository } from "../infrastructure/repositories/ClientRepository.js";
+import { CompanyRepository } from "../infrastructure/repositories/CompanyRepository.js";
+import { DriverRepository } from "../infrastructure/repositories/DriverRepository.js";
+import { RemisionRepository } from "../infrastructure/repositories/RemisionRepository.js";
+import { UserRepository } from "../infrastructure/repositories/UserRepository.js";
 
-import { AuthController } from "@/presentation/http/controllers/auth.controller.js";
-import { ClientController } from "@/presentation/http/controllers/client.controller.js";
-import { CompanyController } from "@/presentation/http/controllers/company.controller.js";
-import { DriverController } from "@/presentation/http/controllers/driver.controller.js";
-import { RemisionController } from "@/presentation/http/controllers/remision.controller.js";
-import { UserController } from "@/presentation/http/controllers/user.controller.js";
+import { AuthController } from "../presentation/http/controllers/auth.controller.js";
+import { ClientController } from "../presentation/http/controllers/client.controller.js";
+import { CompanyController } from "../presentation/http/controllers/company.controller.js";
+import { DriverController } from "../presentation/http/controllers/driver.controller.js";
+import { RemisionController } from "../presentation/http/controllers/remision.controller.js";
+import { UserController } from "../presentation/http/controllers/user.controller.js";
 
 // Repositorios (infraestructura)
 const userRepository = new UserRepository();

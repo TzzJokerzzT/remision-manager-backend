@@ -2,7 +2,7 @@
 // Conventions: bun:test, relative imports with .js extension, no
 // process.env/network/timers/filesystem.
 import { describe, expect, test } from "bun:test";
-import { escapeRegex } from "@/shared/utils/escape-regex.js";
+import { escapeRegex } from "./escape-regex.js";
 
 describe("escapeRegex", () => {
 	test("escapes each regex metacharacter to a literal", () => {

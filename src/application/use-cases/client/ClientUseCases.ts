@@ -1,16 +1,19 @@
+import type { Client } from "../../../domain/entities/Client.js";
+import type { IClientRepository } from "../../../domain/repositories/IClientRepository.js";
+import type { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
+import {
+	ForbiddenError,
+	NotFoundError,
+} from "../../../shared/errors/AppError.js";
 import type {
 	CreateClientDto,
 	UpdateClientDto,
-} from "@/application/dtos/client.dto.js";
+} from "../../dtos/client.dto.js";
 import {
 	buildPaginationResponse,
 	type PaginationDTO,
 	type PaginationResponseDTO,
-} from "@/application/dtos/pagination.dto.js";
-import type { Client } from "@/domain/entities/Client.js";
-import type { IClientRepository } from "@/domain/repositories/IClientRepository.js";
-import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
-import { ForbiddenError, NotFoundError } from "@/shared/errors/AppError.js";
+} from "../../dtos/pagination.dto.js";
 
 export class ClientUseCases {
 	constructor(

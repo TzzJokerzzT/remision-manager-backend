@@ -1,5 +1,5 @@
-import type { RemisionItem } from "@/domain/entities/Remision.js";
-import { ValidationError } from "@/shared/errors/AppError.js";
+import { ValidationError } from "../../shared/errors/AppError.js";
+import type { RemisionItem } from "../entities/Remision.js";
 
 export interface RemisionTotals {
 	subtotal: number | undefined;
