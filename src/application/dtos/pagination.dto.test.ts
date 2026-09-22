@@ -6,7 +6,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	buildPaginationResponse,
 	paginationQuerySchema,
-} from "./pagination.dto.js";
+} from "@/application/dtos/pagination.dto.js";
 
 describe("paginationQuerySchema", () => {
 	test("coerces string limit and page to numbers", () => {

@@ -1,7 +1,7 @@
 import type { NextFunction, Response } from "express";
-import type { RemisionListQueryDTO } from "../../../application/dtos/remision-list-query.dto.js";
-import type { RemisionUseCases } from "../../../application/use-cases/remision/RemisionUseCases.js";
-import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
+import type { RemisionListQueryDTO } from "@/application/dtos/remision-list-query.dto.js";
+import type { RemisionUseCases } from "@/application/use-cases/remision/RemisionUseCases.js";
+import type { AuthenticatedRequest } from "@/presentation/http/middlewares/authenticate.js";
 
 export class RemisionController {
 	constructor(private readonly remisionUseCases: RemisionUseCases) {}

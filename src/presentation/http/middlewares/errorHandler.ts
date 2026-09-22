@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
-import { env } from "../../../config/env.js";
-import { AppError } from "../../../shared/errors/AppError.js";
+import { env } from "@/config/env.js";
+import { AppError } from "@/shared/errors/AppError.js";
 
 export function notFoundHandler(req: Request, res: Response): void {
 	res.status(404).json({

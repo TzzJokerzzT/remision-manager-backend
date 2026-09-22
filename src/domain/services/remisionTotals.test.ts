@@ -3,8 +3,8 @@
 // process.env, no network/timers/filesystem; error paths asserted via
 // instance checks on thrown values.
 import { describe, expect, test } from "bun:test";
-import { ValidationError } from "../../shared/errors/AppError.js";
-import { computeRemisionTotals } from "./remisionTotals.js";
+import { ValidationError } from "@/shared/errors/AppError.js";
+import { computeRemisionTotals } from "@/domain/services/remisionTotals.js";
 
 describe("computeRemisionTotals", () => {
 	test("sums quantity × unitPrice for priced items", () => {

@@ -1,22 +1,22 @@
 import {
 	buildPaginationResponse,
 	type PaginationResponseDTO,
-} from "../../dtos/pagination.dto.js";
+} from "@/application/dtos/pagination.dto.js";
 import type {
 	CreateRemisionDto,
 	UpdateRemisionDto,
-} from "../../dtos/remision.dto.js";
-import type { RemisionListQueryDTO } from "../../dtos/remision-list-query.dto.js";
-import type { Remision } from "../../../domain/entities/Remision.js";
-import type { IClientRepository } from "../../../domain/repositories/IClientRepository.js";
-import type { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
-import type { IDriverRepository } from "../../../domain/repositories/IDriverRepository.js";
+} from "@/application/dtos/remision.dto.js";
+import type { RemisionListQueryDTO } from "@/application/dtos/remision-list-query.dto.js";
+import type { Remision } from "@/domain/entities/Remision.js";
+import type { IClientRepository } from "@/domain/repositories/IClientRepository.js";
+import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
+import type { IDriverRepository } from "@/domain/repositories/IDriverRepository.js";
 import type {
 	IRemisionRepository,
 	RemisionListFilters,
-} from "../../../domain/repositories/IRemisionRepository.js";
-import { computeRemisionTotals } from "../../../domain/services/remisionTotals.js";
-import { ForbiddenError, NotFoundError } from "../../../shared/errors/AppError.js";
+} from "@/domain/repositories/IRemisionRepository.js";
+import { computeRemisionTotals } from "@/domain/services/remisionTotals.js";
+import { ForbiddenError, NotFoundError } from "@/shared/errors/AppError.js";
 
 export type RemisionWithClient = Remision & { clientName: string };
 

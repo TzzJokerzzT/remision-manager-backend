@@ -1,4 +1,4 @@
-import { Driver } from "../entities/Driver.js";
+import { Driver } from "@/domain/entities/Driver.js";
 
 export interface IDriverRepository {
 	create(data: Omit<Driver, "id" | "createdAt" | "updatedAt">): Promise<Driver>;

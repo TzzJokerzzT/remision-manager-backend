@@ -1,4 +1,4 @@
-import { Client } from "../entities/Client.js";
+import { Client } from "@/domain/entities/Client.js";
 
 export interface IClientRepository {
 	create(data: Omit<Client, "id" | "createdAt" | "updatedAt">): Promise<Client>;

@@ -10,7 +10,7 @@ import {
 	NotFoundError,
 	UnauthorizedError,
 	ValidationError,
-} from "./AppError.js";
+} from "@/shared/errors/AppError.js";
 
 describe("AppError hierarchy", () => {
 	test("AppError is instanceof AppError with message and statusCode", () => {

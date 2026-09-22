@@ -1,6 +1,6 @@
 import type { NextFunction, Response } from "express";
-import type { DriverUseCases } from "../../../application/use-cases/driver/DriverUseCases.js";
-import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
+import type { DriverUseCases } from "@/application/use-cases/driver/DriverUseCases.js";
+import type { AuthenticatedRequest } from "@/presentation/http/middlewares/authenticate.js";
 
 export class DriverController {
 	constructor(private readonly driverUseCases: DriverUseCases) {}

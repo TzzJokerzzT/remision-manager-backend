@@ -1,6 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import type { ZodSchema } from "zod";
-import { ValidationError } from "../../../shared/errors/AppError.js";
+import { ValidationError } from "@/shared/errors/AppError.js";
 
 type Source = "body" | "params" | "query";
 

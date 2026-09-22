@@ -1,6 +1,6 @@
 import type { NextFunction, Response } from "express";
-import type { ClientUseCases } from "../../../application/use-cases/client/ClientUseCases.js";
-import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
+import type { ClientUseCases } from "@/application/use-cases/client/ClientUseCases.js";
+import type { AuthenticatedRequest } from "@/presentation/http/middlewares/authenticate.js";
 
 export class ClientController {
 	constructor(private readonly clientUseCases: ClientUseCases) {}

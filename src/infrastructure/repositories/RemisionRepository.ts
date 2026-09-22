@@ -1,12 +1,12 @@
-import type { Remision } from "../../domain/entities/Remision.js";
+import type { Remision } from "@/domain/entities/Remision.js";
 import type {
 	IRemisionRepository,
 	RemisionListFilters,
-} from "../../domain/repositories/IRemisionRepository.js";
+} from "@/domain/repositories/IRemisionRepository.js";
 import {
 	type RemisionDocument,
 	RemisionModel,
-} from "../database/models/Remision.model.js";
+} from "@/infrastructure/database/models/Remision.model.js";
 
 function toDomain(doc: RemisionDocument): Remision {
 	return {

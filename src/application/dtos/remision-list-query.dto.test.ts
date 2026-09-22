@@ -2,7 +2,7 @@
 // Conventions: bun:test, relative imports with .js extension, safeParse for
 // negative cases (never expect().toThrow).
 import { describe, expect, test } from "bun:test";
-import { remisionListQuerySchema } from "./remision-list-query.dto.js";
+import { remisionListQuerySchema } from "@/application/dtos/remision-list-query.dto.js";
 
 describe("remisionListQuerySchema pagination", () => {
 	test("coerces limit and page from strings", () => {

@@ -3,12 +3,12 @@ import { z } from "zod";
 import {
 	createRemisionSchema,
 	updateRemisionSchema,
-} from "../../../application/dtos/remision.dto.js";
-import { remisionListQuerySchema } from "../../../application/dtos/remision-list-query.dto.js";
-import { mongoIdSchema } from "../../../application/dtos/user.dto.js";
-import type { RemisionController } from "../controllers/remision.controller.js";
-import { authenticate } from "../middlewares/authenticate.js";
-import { validate } from "../middlewares/validate.js";
+} from "@/application/dtos/remision.dto.js";
+import { remisionListQuerySchema } from "@/application/dtos/remision-list-query.dto.js";
+import { mongoIdSchema } from "@/application/dtos/user.dto.js";
+import type { RemisionController } from "@/presentation/http/controllers/remision.controller.js";
+import { authenticate } from "@/presentation/http/middlewares/authenticate.js";
+import { validate } from "@/presentation/http/middlewares/validate.js";
 
 export function buildRemisionRoutes(controller: RemisionController): Router {
 	const router = Router();

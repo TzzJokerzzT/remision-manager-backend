@@ -1,10 +1,10 @@
-import type { Driver } from "../../domain/entities/Driver.js";
-import type { IDriverRepository } from "../../domain/repositories/IDriverRepository.js";
+import type { Driver } from "@/domain/entities/Driver.js";
+import type { IDriverRepository } from "@/domain/repositories/IDriverRepository.js";
 import {
 	type DriverDocument,
 	DriverModel,
-} from "../database/models/Driver.model.js";
-import { escapeRegex } from "../../shared/utils/escape-regex.js";
+} from "@/infrastructure/database/models/Driver.model.js";
+import { escapeRegex } from "@/shared/utils/escape-regex.js";
 
 function toDomain(doc: DriverDocument): Driver {
 	return {

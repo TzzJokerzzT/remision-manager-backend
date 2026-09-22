@@ -1,10 +1,10 @@
-import { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
+import { IUserRepository } from "@/domain/repositories/IUserRepository.js";
 import {
 	NotFoundError,
 	ForbiddenError,
-} from "../../../shared/errors/AppError.js";
-import { UpdateUserDto } from "../../dtos/user.dto.js";
-import { SafeUser } from "../../../domain/entities/User.js";
+} from "@/shared/errors/AppError.js";
+import { UpdateUserDto } from "@/application/dtos/user.dto.js";
+import { SafeUser } from "@/domain/entities/User.js";
 
 function toSafeUser(user: any): SafeUser {
 	const {

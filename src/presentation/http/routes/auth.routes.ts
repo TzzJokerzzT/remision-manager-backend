@@ -3,11 +3,11 @@ import {
 	loginSchema,
 	refreshSchema,
 	registerSchema,
-} from "../../../application/dtos/auth.dto.js";
-import type { AuthController } from "../controllers/auth.controller.js";
-import { authenticate } from "../middlewares/authenticate.js";
-import { authLimiter } from "../middlewares/rateLimiter.js";
-import { validate } from "../middlewares/validate.js";
+} from "@/application/dtos/auth.dto.js";
+import type { AuthController } from "@/presentation/http/controllers/auth.controller.js";
+import { authenticate } from "@/presentation/http/middlewares/authenticate.js";
+import { authLimiter } from "@/presentation/http/middlewares/rateLimiter.js";
+import { validate } from "@/presentation/http/middlewares/validate.js";
 
 export function buildAuthRoutes(controller: AuthController): Router {
 	const router = Router();
