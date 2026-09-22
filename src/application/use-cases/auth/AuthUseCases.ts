@@ -1,13 +1,13 @@
-import type { SafeUser } from "../../../domain/entities/User.js";
-import type { IUserRepository } from "../../../domain/repositories/IUserRepository.js";
-import { sha256 } from "../../../infrastructure/security/hash.util.js";
-import { JwtService } from "../../../infrastructure/security/jwt.service.js";
-import { PasswordService } from "../../../infrastructure/security/password.service.js";
+import type { SafeUser } from "@/domain/entities/User.js";
+import type { IUserRepository } from "@/domain/repositories/IUserRepository.js";
+import { sha256 } from "@/infrastructure/security/hash.util.js";
+import { JwtService } from "@/infrastructure/security/jwt.service.js";
+import { PasswordService } from "@/infrastructure/security/password.service.js";
 import {
 	ConflictError,
 	UnauthorizedError,
-} from "../../../shared/errors/AppError.js";
-import type { LoginDto, RegisterDto } from "../../dtos/auth.dto.js";
+} from "@/shared/errors/AppError.js";
+import type { LoginDto, RegisterDto } from "@/application/dtos/auth.dto.js";
 
 function toSafeUser(user: {
 	id: string;

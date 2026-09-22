@@ -1,6 +1,6 @@
 import type { NextFunction, Response } from "express";
-import type { ClientUseCases } from "../../../application/use-cases/client/ClientUseCases.js";
-import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
+import type { ClientUseCases } from "@/application/use-cases/client/ClientUseCases.js";
+import type { AuthenticatedRequest } from "@/presentation/http/middlewares/authenticate.js";
 
 export class ClientController {
 	constructor(private readonly clientUseCases: ClientUseCases) {}
@@ -59,10 +59,13 @@ export class ClientController {
 					: undefined;
 			const search =
 				typeof req.query.search === "string" ? req.query.search : undefined;
+			const limit = typeof req.query.limit === "number" ? req.query.limit : 20;
+			const page = typeof req.query.page === "number" ? req.query.page : 1;
 			const clients = await this.clientUseCases.listMine(
 				req.user!.id,
 				companyId,
 				search,
+				{ limit, page },
 			);
 			res.json({
 				success: true,

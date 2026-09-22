@@ -2,8 +2,8 @@ import type { NextFunction, Response } from "express";
 import {
 	ForbiddenError,
 	UnauthorizedError,
-} from "../../../shared/errors/AppError.js";
-import type { AuthenticatedRequest } from "./authenticate.js";
+} from "@/shared/errors/AppError.js";
+import type { AuthenticatedRequest } from "@/presentation/http/middlewares/authenticate.js";
 
 export function authorize(...roles: Array<"admin" | "user">) {
 	return (

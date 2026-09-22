@@ -1,6 +1,7 @@
 import type { NextFunction, Response } from "express";
-import type { RemisionUseCases } from "../../../application/use-cases/remision/RemisionUseCases.js";
-import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
+import type { RemisionListQueryDTO } from "@/application/dtos/remision-list-query.dto.js";
+import type { RemisionUseCases } from "@/application/use-cases/remision/RemisionUseCases.js";
+import type { AuthenticatedRequest } from "@/presentation/http/middlewares/authenticate.js";
 
 export class RemisionController {
 	constructor(private readonly remisionUseCases: RemisionUseCases) {}
@@ -53,16 +54,10 @@ export class RemisionController {
 		next: NextFunction,
 	) => {
 		try {
-			const companyId =
-				typeof req.query.companyId === "string"
-					? req.query.companyId
-					: undefined;
-			const search =
-				typeof req.query.search === "string" ? req.query.search : undefined;
+			const query = req.query as unknown as RemisionListQueryDTO;
 			const remisiones = await this.remisionUseCases.listMine(
 				req.user!.id,
-				companyId,
-				search,
+				query,
 			);
 			res.json({
 				success: true,

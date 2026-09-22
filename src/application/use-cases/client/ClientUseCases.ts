@@ -1,11 +1,19 @@
-import { IClientRepository } from "../../../domain/repositories/IClientRepository.js";
-import { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
-import { Client } from "../../../domain/entities/Client.js";
+import type { Client } from "@/domain/entities/Client.js";
+import type { IClientRepository } from "@/domain/repositories/IClientRepository.js";
+import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
 import {
-	NotFoundError,
 	ForbiddenError,
-} from "../../../shared/errors/AppError.js";
-import { CreateClientDto, UpdateClientDto } from "../../dtos/client.dto.js";
+	NotFoundError,
+} from "@/shared/errors/AppError.js";
+import type {
+	CreateClientDto,
+	UpdateClientDto,
+} from "@/application/dtos/client.dto.js";
+import {
+	buildPaginationResponse,
+	type PaginationDTO,
+	type PaginationResponseDTO,
+} from "@/application/dtos/pagination.dto.js";
 
 export class ClientUseCases {
 	constructor(
@@ -41,8 +49,20 @@ export class ClientUseCases {
 		ownerId: string,
 		companyId?: string,
 		search?: string,
-	): Promise<Client[]> {
-		return this.clientRepo.listByOwner(ownerId, companyId, search);
+		pagination: PaginationDTO = { limit: 20, page: 1 },
+	): Promise<PaginationResponseDTO<Client>> {
+		const { items, total } = await this.clientRepo.listByOwner(
+			ownerId,
+			companyId,
+			search,
+			pagination,
+		);
+		return buildPaginationResponse(
+			items,
+			total,
+			pagination.limit,
+			pagination.page,
+		);
 	}
 
 	async update(

@@ -1,0 +1,44 @@
+project: remision-manager-backend
+context: |
+  Bun + TypeScript (strict) + Express 4 REST backend, MongoDB (Mongoose 8),
+  Zod validation, JWT auth, Helmet/CORS/HPP/rate-limit. Clean Architecture:
+  domain / application (use cases, DTOs) / infrastructure (db, repositories,
+  security) / presentation (http: controllers, middlewares, routes) + config + di + shared.
+  ES modules, tab indentation, double quotes, path alias @/* -> src/*. Deployed on
+  Vercel serverless (Bun 1.x).
+strict_tdd: true
+testing:
+  runner: bun
+  test_command: bun test
+  coverage_command: bun test --coverage
+  projects:
+    - path: .
+      stack: "Bun + TypeScript + Express + Mongoose"
+      test_command: bun test
+      framework: bun:test
+      test_layers:
+        unit: true
+        integration: false
+        e2e: false
+      coverage: true
+      quality:
+        linter:
+          tool: biome
+          available: true
+          command: "biome check ."
+        type_checker:
+          tool: typescript
+          available: true
+          command: "bun run build"
+        formatter:
+          tool: biome
+          available: true
+          command: "biome format ."
+phases:
+  proposal: openspec
+  spec: openspec
+  design: openspec
+  tasks: openspec
+  apply: openspec
+  verify: openspec
+  archive: openspec

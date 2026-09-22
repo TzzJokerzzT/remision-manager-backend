@@ -1,6 +1,6 @@
-import { env } from "./config/env.js";
-import { connectDatabase } from "./infrastructure/database/mongoose.js";
-import { createServer } from "./presentation/http/server.js";
+import { env } from "@/config/env.js";
+import { connectDatabase } from "@/infrastructure/database/mongoose.js";
+import { createServer } from "@/presentation/http/server.js";
 
 const app = createServer();
 

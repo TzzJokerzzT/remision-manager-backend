@@ -1,9 +1,10 @@
-import type { Client } from "../../domain/entities/Client.js";
-import type { IClientRepository } from "../../domain/repositories/IClientRepository.js";
+import type { Client } from "@/domain/entities/Client.js";
+import type { IClientRepository } from "@/domain/repositories/IClientRepository.js";
 import {
 	type ClientDocument,
 	ClientModel,
-} from "../database/models/Client.model.js";
+} from "@/infrastructure/database/models/Client.model.js";
+import { escapeRegex } from "@/shared/utils/escape-regex.js";
 
 function toDomain(doc: ClientDocument): Client {
 	return {
@@ -33,6 +34,21 @@ export class ClientRepository implements IClientRepository {
 		return doc ? toDomain(doc) : null;
 	}
 
+	async findByIds(ids: string[]): Promise<Client[]> {
+		if (ids.length === 0) return [];
+		const docs = await ClientModel.find({ _id: { $in: ids } });
+		return docs.map(toDomain);
+	}
+
+	async findIdsByName(name: string): Promise<string[]> {
+		const trimmed = name.trim();
+		if (trimmed.length === 0) return [];
+		const docs = await ClientModel.find({
+			name: { $regex: escapeRegex(trimmed), $options: "i" },
+		}).select("_id");
+		return docs.map((doc) => doc.id.toString());
+	}
+
 	async update(id: string, data: Partial<Client>): Promise<Client | null> {
 		const doc = await ClientModel.findByIdAndUpdate(id, data, {
 			new: true,
@@ -50,7 +66,8 @@ export class ClientRepository implements IClientRepository {
 		ownerId: string,
 		companyId?: string,
 		search?: string,
-	): Promise<Client[]> {
+		pagination: { limit: number; page: number } = { limit: 20, page: 1 },
+	): Promise<{ items: Client[]; total: number }> {
 		const filter: Record<string, unknown> = { ownerId };
 		if (companyId) filter.companyId = companyId;
 		if (search && search.trim().length > 0) {
@@ -61,7 +78,11 @@ export class ClientRepository implements IClientRepository {
 			query.select({ score: { $meta: "textScore" } });
 			query.sort({ score: { $meta: "textScore" } });
 		}
-		const docs = await query;
-		return docs.map(toDomain);
+		const skip = (pagination.page - 1) * pagination.limit;
+		const [docs, total] = await Promise.all([
+			query.skip(skip).limit(pagination.limit),
+			ClientModel.countDocuments(filter),
+		]);
+		return { items: docs.map(toDomain), total };
 	}
 }

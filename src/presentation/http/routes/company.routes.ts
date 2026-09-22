@@ -3,11 +3,12 @@ import { z } from "zod";
 import {
 	createCompanySchema,
 	updateCompanySchema,
-} from "../../../application/dtos/company.dto.js";
-import { mongoIdSchema } from "../../../application/dtos/user.dto.js";
-import type { CompanyController } from "../controllers/company.controller.js";
-import { authenticate } from "../middlewares/authenticate.js";
-import { validate } from "../middlewares/validate.js";
+} from "@/application/dtos/company.dto.js";
+import { paginationQuerySchema } from "@/application/dtos/pagination.dto.js";
+import { mongoIdSchema } from "@/application/dtos/user.dto.js";
+import type { CompanyController } from "@/presentation/http/controllers/company.controller.js";
+import { authenticate } from "@/presentation/http/middlewares/authenticate.js";
+import { validate } from "@/presentation/http/middlewares/validate.js";
 
 export function buildCompanyRoutes(controller: CompanyController): Router {
 	const router = Router();
@@ -16,7 +17,7 @@ export function buildCompanyRoutes(controller: CompanyController): Router {
 	router.use(authenticate);
 
 	router.post("/", validate(createCompanySchema), controller.create);
-	router.get("/", controller.list);
+	router.get("/", validate(paginationQuerySchema, "query"), controller.list);
 	router.get("/:id", validate(idParamSchema, "params"), controller.getById);
 	router.patch(
 		"/:id",

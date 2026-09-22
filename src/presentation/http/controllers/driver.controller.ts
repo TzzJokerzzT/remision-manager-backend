@@ -1,6 +1,6 @@
 import type { NextFunction, Response } from "express";
-import type { DriverUseCases } from "../../../application/use-cases/driver/DriverUseCases.js";
-import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
+import type { DriverUseCases } from "@/application/use-cases/driver/DriverUseCases.js";
+import type { AuthenticatedRequest } from "@/presentation/http/middlewares/authenticate.js";
 
 export class DriverController {
 	constructor(private readonly driverUseCases: DriverUseCases) {}
@@ -59,10 +59,13 @@ export class DriverController {
 					: undefined;
 			const search =
 				typeof req.query.search === "string" ? req.query.search : undefined;
+			const limit = typeof req.query.limit === "number" ? req.query.limit : 20;
+			const page = typeof req.query.page === "number" ? req.query.page : 1;
 			const drivers = await this.driverUseCases.listMine(
 				req.user!.id,
 				companyId,
 				search,
+				{ limit, page },
 			);
 			res.json({
 				success: true,

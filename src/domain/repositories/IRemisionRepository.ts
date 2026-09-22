@@ -1,4 +1,14 @@
-import { Remision } from "../entities/Remision.js";
+import { Remision } from "@/domain/entities/Remision.js";
+
+export interface RemisionListFilters {
+	companyId?: string;
+	search?: string;
+	clientIds?: string[];
+	driverIds?: string[];
+	type?: Remision["type"];
+	from?: Date;
+	to?: Date;
+}
 
 export interface IRemisionRepository {
 	create(
@@ -9,8 +19,8 @@ export interface IRemisionRepository {
 	delete(id: string): Promise<boolean>;
 	listByOwner(
 		ownerId: string,
-		companyId?: string,
-		search?: string,
-	): Promise<Remision[]>;
+		filters?: RemisionListFilters,
+		pagination?: { limit: number; page: number },
+	): Promise<{ items: Remision[]; total: number }>;
 	getNextConsecutive(companyId: string): Promise<number>;
 }

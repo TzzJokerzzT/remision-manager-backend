@@ -1,9 +1,12 @@
-import type { Remision } from "../../domain/entities/Remision.js";
-import type { IRemisionRepository } from "../../domain/repositories/IRemisionRepository.js";
+import type { Remision } from "@/domain/entities/Remision.js";
+import type {
+	IRemisionRepository,
+	RemisionListFilters,
+} from "@/domain/repositories/IRemisionRepository.js";
 import {
 	type RemisionDocument,
 	RemisionModel,
-} from "../database/models/Remision.model.js";
+} from "@/infrastructure/database/models/Remision.model.js";
 
 function toDomain(doc: RemisionDocument): Remision {
 	return {
@@ -53,13 +56,25 @@ export class RemisionRepository implements IRemisionRepository {
 
 	async listByOwner(
 		ownerId: string,
-		companyId?: string,
-		search?: string,
-	): Promise<Remision[]> {
+		filters: RemisionListFilters = {},
+		pagination: { limit: number; page: number } = { limit: 20, page: 1 },
+	): Promise<{ items: Remision[]; total: number }> {
+		const { companyId, search, clientIds, driverIds, type, from, to } = filters;
 		const filter: Record<string, unknown> = { ownerId };
 		if (companyId) filter.companyId = companyId;
 		if (search && search.trim().length > 0) {
 			filter.$text = { $search: search.trim() };
+		}
+		// CRITICAL: guard on `!== undefined`, NOT `length > 0`. An empty array
+		// means "no name match" and MUST produce `$in: []` (matches nothing).
+		if (clientIds !== undefined) filter.clientId = { $in: clientIds };
+		if (driverIds !== undefined) filter.driverId = { $in: driverIds };
+		if (type !== undefined) filter.type = type;
+		if (from !== undefined || to !== undefined) {
+			const createdAt: { $gte?: Date; $lte?: Date } = {};
+			if (from !== undefined) createdAt.$gte = from;
+			if (to !== undefined) createdAt.$lte = to;
+			filter.createdAt = createdAt;
 		}
 		const query = RemisionModel.find(filter);
 		if (search && search.trim().length > 0) {
@@ -68,8 +83,12 @@ export class RemisionRepository implements IRemisionRepository {
 		} else {
 			query.sort({ createdAt: -1 });
 		}
-		const docs = await query;
-		return docs.map(toDomain);
+		const skip = (pagination.page - 1) * pagination.limit;
+		const [docs, total] = await Promise.all([
+			query.skip(skip).limit(pagination.limit),
+			RemisionModel.countDocuments(filter),
+		]);
+		return { items: docs.map(toDomain), total };
 	}
 
 	async getNextConsecutive(companyId: string): Promise<number> {

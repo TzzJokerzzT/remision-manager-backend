@@ -1,9 +1,9 @@
-import type { Company } from "../../domain/entities/Company.js";
-import type { ICompanyRepository } from "../../domain/repositories/ICompanyRepository.js";
+import type { Company } from "@/domain/entities/Company.js";
+import type { ICompanyRepository } from "@/domain/repositories/ICompanyRepository.js";
 import {
 	type CompanyDocument,
 	CompanyModel,
-} from "../database/models/Company.model.js";
+} from "@/infrastructure/database/models/Company.model.js";
 
 function toDomain(doc: CompanyDocument): Company {
 	return {
@@ -51,7 +51,11 @@ export class CompanyRepository implements ICompanyRepository {
 		return !!result;
 	}
 
-	async listByOwner(ownerId: string, search?: string): Promise<Company[]> {
+	async listByOwner(
+		ownerId: string,
+		search?: string,
+		pagination: { limit: number; page: number } = { limit: 20, page: 1 },
+	): Promise<{ items: Company[]; total: number }> {
 		const filter: Record<string, unknown> = { ownerId };
 		if (search && search.trim().length > 0) {
 			filter.$text = { $search: search.trim() };
@@ -61,7 +65,11 @@ export class CompanyRepository implements ICompanyRepository {
 			query.select({ score: { $meta: "textScore" } });
 			query.sort({ score: { $meta: "textScore" } });
 		}
-		const docs = await query;
-		return docs.map(toDomain);
+		const skip = (pagination.page - 1) * pagination.limit;
+		const [docs, total] = await Promise.all([
+			query.skip(skip).limit(pagination.limit),
+			CompanyModel.countDocuments(filter),
+		]);
+		return { items: docs.map(toDomain), total };
 	}
 }
