@@ -1,5 +1,21 @@
-import rateLimit from "express-rate-limit";
+import rateLimit, { type RateLimitRequestHandler } from "express-rate-limit";
 import { env } from "../../../config/env.js";
+
+export function createGeneralLimiter(
+	windowMs: number,
+	limit: number,
+): RateLimitRequestHandler {
+	return rateLimit({
+		windowMs,
+		limit,
+		standardHeaders: true,
+		legacyHeaders: false,
+		message: {
+			success: false,
+			message: "Demasiadas solicitudes, intenta de nuevo más tarde",
+		},
+	});
+}
 
 export const generalLimiter = rateLimit({
 	windowMs: env.RATE_LIMIT_WINDOW_MS,

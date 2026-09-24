@@ -18,8 +18,8 @@ testing:
       framework: bun:test
       test_layers:
         unit: true
-        integration: false
-        e2e: false
+        integration: true
+        e2e: true
       coverage: true
       quality:
         linter:
