@@ -18,6 +18,7 @@ describe("computeRemisionTotals", () => {
 
 		expect(totals.subtotal).toBe(36.5);
 		expect(totals.ivaValue).toBe(0);
+		expect(totals.retencionValue).toBeUndefined();
 		expect(totals.total).toBe(36.5);
 	});
 
@@ -26,6 +27,7 @@ describe("computeRemisionTotals", () => {
 
 		expect(totals.subtotal).toBe(0);
 		expect(totals.ivaValue).toBe(0);
+		expect(totals.retencionValue).toBeUndefined();
 		expect(totals.total).toBe(0);
 	});
 
@@ -50,6 +52,7 @@ describe("computeRemisionTotals", () => {
 
 		expect(totals.subtotal).toBeUndefined();
 		expect(totals.ivaValue).toBeUndefined();
+		expect(totals.retencionValue).toBeUndefined();
 		expect(totals.total).toBeUndefined();
 	});
 
@@ -79,5 +82,66 @@ describe("computeRemisionTotals", () => {
 
 		expect(caught).toBeInstanceOf(ValidationError);
 		expect((caught as ValidationError).statusCode).toBe(422);
+	});
+
+	test("calculates retencionValue when hasRetencion is true", () => {
+		const totals = computeRemisionTotals(
+			[{ description: "A", quantity: 1, unitPrice: 1000 }],
+			"priced",
+			19,
+			true,
+			2.5,
+		);
+
+		expect(totals.subtotal).toBe(1000);
+		expect(totals.ivaValue).toBe(190);
+		expect(totals.retencionValue).toBe(25);
+		// total = subtotal + iva - retencion = 1000 + 190 - 25 = 1165
+		expect(totals.total).toBe(1165);
+	});
+
+	test("retencionValue is undefined when hasRetencion is false", () => {
+		const totals = computeRemisionTotals(
+			[{ description: "A", quantity: 1, unitPrice: 1000 }],
+			"priced",
+			19,
+			false,
+			2.5,
+		);
+
+		expect(totals.retencionValue).toBeUndefined();
+		expect(totals.total).toBe(1190); // subtotal + iva, no retencion
+	});
+
+	test("retencionValue is undefined when retencionPercentage is not provided", () => {
+		const totals = computeRemisionTotals(
+			[{ description: "A", quantity: 1, unitPrice: 1000 }],
+			"priced",
+			19,
+			true,
+		);
+
+		expect(totals.retencionValue).toBeUndefined();
+		expect(totals.total).toBe(1190);
+	});
+
+	test("retencion with IVA composes correctly", () => {
+		// subtotal=200, IVA 19%=38, retencion 2.5%=5
+		// total = 200 + 38 - 5 = 233
+		const totals = computeRemisionTotals(
+			[
+				{ description: "A", quantity: 2, unitPrice: 50 },
+				{ description: "B", quantity: 1, unitPrice: 100 },
+			],
+			"priced",
+			19,
+			true,
+			2.5,
+		);
+
+		expect(totals.subtotal).toBe(200);
+		expect(totals.ivaValue).toBe(38);
+		expect(totals.retencionValue).toBe(5);
+		expect(totals.total).toBe(233);
 	});
 });

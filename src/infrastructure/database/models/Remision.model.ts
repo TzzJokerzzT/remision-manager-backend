@@ -1,5 +1,8 @@
 import { type Document, model, Schema, type Types } from "mongoose";
-import type { RemisionType } from "../../../domain/entities/Remision.js";
+import type {
+	DocumentType,
+	RemisionType,
+} from "../../../domain/entities/Remision.js";
 
 interface RemisionItemSub {
 	description: string;
@@ -10,6 +13,7 @@ interface RemisionItemSub {
 export interface RemisionDocument extends Document {
 	consecutive: number;
 	type: RemisionType;
+	documentType: DocumentType;
 	companyId: Types.ObjectId;
 	clientId: Types.ObjectId;
 	driverId?: Types.ObjectId;
@@ -17,6 +21,9 @@ export interface RemisionDocument extends Document {
 	subtotal?: number;
 	ivaPercentage?: number;
 	ivaValue?: number;
+	hasRetencion: boolean;
+	retencionPercentage?: number;
+	retencionValue?: number;
 	total?: number;
 	notes?: string;
 	ownerId: Types.ObjectId;
@@ -37,6 +44,12 @@ const remisionSchema = new Schema<RemisionDocument>(
 	{
 		consecutive: { type: Number, required: true },
 		type: { type: String, enum: ["priced", "quantity_only"], required: true },
+		documentType: {
+			type: String,
+			enum: ["remision", "orden_compra"],
+			required: true,
+			default: "remision",
+		},
 		companyId: {
 			type: Schema.Types.ObjectId,
 			ref: "Company",
@@ -53,6 +66,9 @@ const remisionSchema = new Schema<RemisionDocument>(
 		subtotal: { type: Number, min: 0 },
 		ivaPercentage: { type: Number, min: 0, max: 100 },
 		ivaValue: { type: Number, min: 0 },
+		hasRetencion: { type: Boolean, default: false },
+		retencionPercentage: { type: Number, min: 0, max: 100 },
+		retencionValue: { type: Number, min: 0 },
 		total: { type: Number, min: 0 },
 		notes: { type: String, trim: true, maxlength: 500 },
 		ownerId: {

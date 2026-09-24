@@ -49,6 +49,8 @@ export class RemisionUseCases {
 			dto.items,
 			dto.type,
 			dto.ivaPercentage,
+			dto.hasRetencion,
+			dto.retencionPercentage,
 		);
 
 		const created = await this.remisionRepo.create({
@@ -138,7 +140,16 @@ export class RemisionUseCases {
 
 		const items = dto.items ?? remision.items;
 		const ivaPercentage = dto.ivaPercentage ?? remision.ivaPercentage;
-		const totals = computeRemisionTotals(items, remision.type, ivaPercentage);
+		const hasRetencion = dto.hasRetencion ?? remision.hasRetencion;
+		const retencionPercentage =
+			dto.retencionPercentage ?? remision.retencionPercentage;
+		const totals = computeRemisionTotals(
+			items,
+			remision.type,
+			ivaPercentage,
+			hasRetencion,
+			retencionPercentage,
+		);
 
 		const updated = await this.remisionRepo.update(id, { ...dto, ...totals });
 		if (!updated) throw new NotFoundError("Remisión");
