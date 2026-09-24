@@ -3,24 +3,26 @@
 ## Project Identity
 
 - **Name**: remisiones-backend
-- **Root**: /home/alex_buelvas/Projects/Github/remisiones-backend/remisiones-backend
+- **Root**: /home/alex_buelvas/Projects/Github/remisiones-backend
 - **Workspace Root**: /home/alex_buelvas/Projects/Github/remisiones-backend
-- **Mode**: hybrid (Engram + openspec)
-- **Strict TDD**: false
+- **Mode**: openspec
+- **Strict TDD**: true
 
 ## Stack
 
 | Layer | Technology | Version |
 |-------|------------|---------|
-| Runtime | Bun | 1.x |
-| Language | TypeScript | 5.6.2 |
+| Runtime | Bun | 1.4.2 |
+| Language | TypeScript | 5.6.2 (strict) |
 | Framework | Express | 4.21.0 |
 | Database | MongoDB (Mongoose) | 8.7.0 |
 | Validation | Zod | 3.23.8 |
-| Auth | JWT (jsonwebtoken) | 9.0.2 |
-| Security | Helmet, CORS, HPP, Rate Limiting | Latest |
-| Linter | Biome | 2.5.0 |
-| Deployment | Vercel Serverless | - |
+| Auth | JWT (jsonwebtoken) + bcryptjs | 9.0.2 |
+| Security | Helmet, CORS, HPP, Rate Limiting, mongo-sanitize | Latest |
+| Linter/Formatter | Biome | 2.5.0 |
+| Testing | bun:test | built-in |
+| Git Hooks | Husky + commitlint | 9.x |
+| Deployment | Vercel Serverless (Bun 1.x) | - |
 
 ## Architecture
 
@@ -28,83 +30,80 @@ Clean Architecture with four layers:
 
 ```
 src/
-├── domain/          # Entities and repository interfaces
+├── config/          # Environment variables (Zod validated)
+├── domain/          # Entities, repository interfaces, pure services
 │   ├── entities/
-│   └── repositories/
+│   ├── repositories/
+│   └── services/
 ├── application/     # Use cases and DTOs
 │   ├── dtos/
 │   └── use-cases/
-├── infrastructure/  # Database, security implementations
+├── infrastructure/  # Mongoose models, repository impls, security
 │   ├── database/
 │   ├── repositories/
 │   └── security/
-├── presentation/    # HTTP layer
+├── presentation/    # Express HTTP layer
 │   └── http/
 │       ├── controllers/
 │       ├── middlewares/
 │       ├── routes/
 │       └── server.ts
-├── config/          # Environment configuration
 ├── di/              # Dependency injection container
-└── shared/          # Shared utilities
+└── shared/          # AppError hierarchy, utilities
 ```
 
 ## Testing Capabilities
 
-| Category | Status | Runner | Command |
-|----------|--------|--------|---------|
-| Unit Tests | ❌ None | - | - |
+| Category | Status | Tool | Command |
+|----------|--------|------|---------|
+| Unit Tests | ✅ 15 files | bun:test | `bun test` |
 | Integration | ❌ None | - | - |
 | E2E Tests | ❌ None | - | - |
-| Coverage | ❌ None | - | - |
-| Linting | ✅ Biome | biome | `bunx biome check .` |
+| Coverage | ✅ Available | bun:test | `bun test --coverage` |
+| Linting | ✅ Biome | biome | `biome check .` |
 | Type Check | ✅ TypeScript | tsc | `bun run build` |
+| Formatting | ✅ Biome | biome | `biome format .` |
 
-**Strict TDD**: Disabled (no test runner configured)
+**Strict TDD**: Enabled (`bun test` covers the workspace)
 
 ## Conventions
 
 - **Module System**: ES Modules (type: "module")
 - **TypeScript**: Strict mode enabled
 - **Formatting**: Tab indentation, double quotes
-- **Path Aliases**: `@/*` → `src/*`
-- **Validation**: Zod schemas for DTOs
-- **Auth**: JWT tokens with bcryptjs for passwords
-- **Deployment**: Vercel serverless with Bun runtime
+- **Imports**: Relative with `.js` extension
+- **Validation**: Zod schemas for all DTOs
+- **Auth**: JWT (access 15min + refresh 7d with rotation)
+- **Git Hooks**: typecheck → lint → test → build on pre-commit
+- **Commits**: Conventional Commits enforced by commitlint
 
 ## Commands
 
 ```bash
-# Development
-bun run dev          # Start dev server with hot reload
-
-# Production
-bun run start        # Start production server
-bun run build        # Type check (noEmit)
-bun run lint         # Run ESLint (if configured)
-
-# Testing (NOT CONFIGURED)
-# No test scripts defined in package.json
+bun run dev           # Development with hot reload
+bun run start         # Production
+bun run build         # Type check (tsc --noEmit)
+bun test              # Run all tests
+bun test --coverage   # Tests with coverage
+bun run lint          # Biome check
+bun run format        # Biome format
 ```
 
 ## Engram Observations
 
-- **ID**: 1250
+- **ID**: 1250 (initial, stale)
 - **Topic**: sdd-init/remisiones-backend
 - **Type**: architecture
-- **Status**: active
 
 ## Risks
 
-1. **No Test Framework**: Project has zero test files and no test runner configured
-2. **No Test Scripts**: package.json lacks test-related scripts
-3. **No Coverage Tool**: No code coverage configured
-4. **Biome vs ESLint**: package.json references ESLint but Biome is configured
+1. **No integration tests**: All 15 tests are unit tests with mocks
+2. **No E2E tests**: No HTTP-level testing
+3. **Stale context**: Previous context.md had incorrect testing status (now corrected)
+4. **No .env.example**: Environment variables documented only in README
 
 ## Next Steps
 
-1. Configure a test framework (recommended: Bun's built-in test runner or Vitest)
-2. Add test scripts to package.json
-3. Create test directory structure
-4. Write first unit tests for domain entities
-5. Set up test database configuration
+1. Use `/sdd-explore` to analyze a specific improvement area
+2. Use `/sdd-new` to propose a change (e.g., integration tests, CI/CD)
+3. Existing changes in `openspec/changes/`: api-pagination, remision-search, testing-infrastructure
