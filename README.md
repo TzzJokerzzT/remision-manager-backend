@@ -220,12 +220,31 @@ bun run dev           # desarrollo con hot-reload
 bun run start         # producción
 bun run build         # type-check (tsc --noEmit)
 bun run typecheck     # alias de build (tsc --noEmit)
-bun test              # ejecutar tests (bun test)
+bun test              # ejecutar todos los tests (unit + integration + E2E)
 bun run test:watch    # tests en modo watch
 bun run test:coverage # tests con cobertura
 bun run lint          # biome check .
 bun run format        # biome format .
 ```
+
+### Tipos de Tests
+
+| Tipo | Ubicación | Herramienta | Qué prueba |
+|------|-----------|-------------|------------|
+| Unit | Co-ubicados (`*.test.ts`) | bun:test + mocks | Lógica de negocio, DTOs, repositorios |
+| Integration | `src/presentation/http/middlewares/*.test.ts` | bun:test + supertest + mongodb-memory-server | Middlewares contra Express real |
+| E2E | `src/tests/integration/e2e/*.test.ts` | bun:test + supertest | Ciclo completo: register→login→authenticated request |
+
+### CI/CD
+
+GitHub Actions ejecuta en cada PR y push a `main`:
+
+1. **Typecheck** — `bun run typecheck`
+2. **Lint** — `bun run lint`
+3. **Test** — `bun test` (unit + integration + E2E)
+4. **Build** — `bun run build`
+
+Workflow: `.github/workflows/ci.yml`
 
 ### Git Hooks (Husky)
 
@@ -251,7 +270,11 @@ Authorization: Bearer <accessToken>
 
 | Método | Ruta | Descripción | Auth |
 |---|---|---|---|
-| GET | `/health` | Estado del servidor | No |
+| GET | `/health` | Estado del servidor (200=ok, 503=degraded) | No |
+
+El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
+- `200 { status: "ok", db: "connected" }` cuando MongoDB está conectado
+- `503 { status: "degraded", db: "disconnected" }` cuando no está conectado
 
 ### Auth — `/api/auth`
 
@@ -608,6 +631,10 @@ Entity (domain) → Repository Interface (domain) → Mongoose Model (infra)
 - El DTO `pagination.dto.ts` define la estructura estándar de respuesta paginada: `{ items, total, limit, page, totalPages }`.
 - El cálculo de totales de la remisión vive en `src/domain/services/remisionTotals.ts` (función pura `computeRemisionTotals`).
 - La búsqueda por nombre de cliente/conductor usa una resolución en dos pasos: regex escapado sobre `name` → ids → `$in` sobre `clientId`/`driverId`.
+- **Consecutive atómico**: el número consecutivo de remisiones se genera con `findOneAndUpdate` + `$inc` en una colección `Counter`, con seed fallback y retry en caso de duplicate-key.
+- **Lazy DB connect**: en Vercel serverless, la conexión a MongoDB se establece en el primer request via middleware (no al inicio), porque `process.env.VERCEL` salta la conexión eager de `index.ts`.
+- **Logging estructurado**: pino JSON en producción, pino-pretty en desarrollo (skip en Vercel por filesystem read-only). Cada request incluye `requestId` y `userId`.
+- **Graceful shutdown**: en ejecución local/containers, `SIGTERM`/`SIGINT` cierran server y DB con timeout de 5s.
 
 ---
 
