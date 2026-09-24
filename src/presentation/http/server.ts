@@ -15,6 +15,7 @@ import {
 	userController,
 } from "../../di/container.js";
 import mongoose from "mongoose";
+import { connectDatabase } from "../../infrastructure/database/mongoose.js";
 import { logger } from "../../shared/logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { generalLimiter } from "./middlewares/rateLimiter.js";
@@ -77,6 +78,19 @@ export function createServer(): Application {
 		res.setHeader("X-Request-Id", id);
 		next();
 	});
+
+	// Lazy DB connect for Vercel serverless (VERCEL=1 skips index.ts connect)
+	// Skip if already connected (integration tests) or in test env
+	if (process.env.NODE_ENV !== "test" && mongoose.connection.readyState !== 1) {
+		let dbReady = false;
+		app.use(async (_req, _res, next) => {
+			if (!dbReady && mongoose.connection.readyState !== 1) {
+				await connectDatabase();
+			}
+			dbReady = true;
+			next();
+		});
+	}
 
 	// Structured logging (skip in test to avoid noisy output)
 	if (env.NODE_ENV !== "test") {
