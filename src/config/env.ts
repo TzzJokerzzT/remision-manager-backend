@@ -22,6 +22,10 @@ const envSchema = z.object({
 
 	RATE_LIMIT_WINDOW_MS: z.coerce.number().default(900000),
 	RATE_LIMIT_MAX: z.coerce.number().default(300),
+
+	LOG_LEVEL: z
+		.enum(["trace", "debug", "info", "warn", "error", "fatal"])
+		.default("info"),
 });
 
 const parsed = envSchema.safeParse(process.env);

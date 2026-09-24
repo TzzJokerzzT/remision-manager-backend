@@ -15,6 +15,7 @@ API REST para generador de remisiones (con precio + IVA, o solo cantidad). Const
 | Validación | Zod | 3.x |
 | Auth | JWT (access + refresh) + bcryptjs | — |
 | Seguridad | Helmet, CORS, HPP, mongo-sanitize, rate-limit | — |
+| Logging | Pino + pino-http | 10.x |
 | Linter/Formatter | Biome | 2.5 |
 | Testing | Bun test | — |
 | Git hooks | Husky + commitlint | 9.x |
@@ -140,6 +141,18 @@ src/
 - **Ownership check**: un usuario `user` solo puede ver/editar sus propios recursos; `admin` puede ver todo.
 - Límite de tamaño de payload JSON (1mb).
 
+### Limitaciones Conocidas
+
+#### Rotación de Refresh Token (single-device)
+
+El sistema almacena **un solo hash de refresh token por usuario**. Cuando un usuario inicia sesión en un segundo dispositivo, el nuevo refresh token sobreescribe el anterior, invalidando la sesión del primer dispositivo.
+
+Esta es una **decisión de diseño intencional** que prioriza simplicidad sobre soporte multi-dispositivo concurrente.
+
+**Workaround para clientes:**
+- Compartir el refresh token entre pestañas del mismo navegador usando el mismo mecanismo de storage (localStorage/sessionStorage).
+- Planificar re-autenticación al cambiar de dispositivo.
+
 ---
 
 ## Variables de Entorno
@@ -165,6 +178,9 @@ CORS_ORIGINS=http://localhost:3000,https://tu-dominio.com
 # Rate limiting
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX=300
+
+# Logging (trace | debug | info | warn | error | fatal)
+LOG_LEVEL=info
 ```
 
 ---

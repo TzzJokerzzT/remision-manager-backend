@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from "express";
 import { env } from "../../../config/env.js";
 import { AppError } from "../../../shared/errors/AppError.js";
+import { logger } from "../../../shared/logger.js";
 
 export function notFoundHandler(req: Request, res: Response): void {
 	res.status(404).json({
@@ -11,7 +12,7 @@ export function notFoundHandler(req: Request, res: Response): void {
 
 export function errorHandler(
 	err: unknown,
-	_req: Request,
+	req: Request,
 	res: Response,
 	_next: NextFunction,
 ): void {
@@ -37,7 +38,8 @@ export function errorHandler(
 		return;
 	}
 
-	console.error("💥 Error no controlado:", err);
+	const log = req.log ?? logger;
+	log.error({ err }, "Unhandled error");
 	res.status(500).json({
 		success: false,
 		message: "Error interno del servidor",

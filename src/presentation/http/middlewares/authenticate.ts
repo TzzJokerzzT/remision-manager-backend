@@ -11,6 +11,12 @@ export function authenticate(
 	_res: Response,
 	next: NextFunction,
 ): void {
+	// Skip authentication for CORS preflight requests
+	if (req.method === "OPTIONS") {
+		next();
+		return;
+	}
+
 	const header = req.headers.authorization;
 	if (!header || !header.startsWith("Bearer ")) {
 		next(new UnauthorizedError("Token no proporcionado"));

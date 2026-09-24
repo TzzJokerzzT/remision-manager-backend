@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { env } from "../../config/env.js";
+import { logger } from "../../shared/logger.js";
 
 mongoose.set("strictQuery", true);
 // strict: true (default) ya evita que se guarden campos no definidos en el schema,
@@ -8,9 +9,9 @@ mongoose.set("strictQuery", true);
 export async function connectDatabase(): Promise<void> {
 	try {
 		await mongoose.connect(env.MONGO_URI);
-		console.log("✅ MongoDB conectado");
+		logger.info("MongoDB connected");
 	} catch (error) {
-		console.error("❌ Error conectando a MongoDB:", error);
+		logger.error({ err: error }, "MongoDB connection failed");
 		process.exit(1);
 	}
 }
