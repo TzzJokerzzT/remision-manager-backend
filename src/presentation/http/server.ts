@@ -3,7 +3,7 @@ import express, { type Application } from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import helmet from "helmet";
 import hpp from "hpp";
-import morgan from "morgan";
+import pinoHttp from "pino-http";
 
 import { env } from "../../config/env.js";
 import {
@@ -14,7 +14,8 @@ import {
 	remisionController,
 	userController,
 } from "../../di/container.js";
-import { connectDatabase } from "../../infrastructure/database/mongoose.js";
+import mongoose from "mongoose";
+import { logger } from "../../shared/logger.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { generalLimiter } from "./middlewares/rateLimiter.js";
 import { buildAuthRoutes } from "./routes/auth.routes.js";
@@ -24,12 +25,14 @@ import { buildDriverRoutes } from "./routes/driver.routes.js";
 import { buildRemisionRoutes } from "./routes/remision.routes.js";
 import { buildUserRoutes } from "./routes/user.routes.js";
 
+import type { AuthenticatedRequest } from "./middlewares/authenticate.js";
+
 export function createServer(): Application {
 	const app = express();
 
 	// --- Seguridad base ---
 	app.disable("x-powered-by");
-	app.set("trust proxy", 1); // necesario si está detrás de un proxy/load balancer (Vercel, Nginx, etc.)
+	app.set("trust proxy", 1);
 
 	app.use(
 		helmet({
@@ -37,53 +40,70 @@ export function createServer(): Application {
 		}),
 	);
 
-	app.use(
-		cors({
-			origin: (origin, callback) => {
-				// permite requests sin origin (curl, apps móviles) y los orígenes configurados
-				const normalized = origin ? origin.replace(/\/+$/, "") : undefined;
-				if (!normalized || env.CORS_ORIGINS_LIST.includes(normalized)) {
-					callback(null, true);
-				} else {
-					callback(null, false);
-				}
-			},
-			credentials: true,
-			methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
-		}),
-	);
+	const corsOptions: cors.CorsOptions = {
+		origin: (origin, callback) => {
+			const normalized = origin ? origin.replace(/\/+$/, "") : undefined;
+			if (!normalized || env.CORS_ORIGINS_LIST.includes(normalized)) {
+				callback(null, true);
+			} else {
+				callback(null, false);
+			}
+		},
+		credentials: true,
+		methods: ["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+	};
+
+	app.use(cors(corsOptions));
+	app.options("*", cors(corsOptions));
 
 	app.use(express.json({ limit: "1mb" }));
 	app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
-	// Sanitiza req.body/params/query contra inyección de operadores Mongo ($gt, $where, etc.)
 	app.use(
 		mongoSanitize({
 			replaceWith: "_",
 		}),
 	);
 
-	// Previene HTTP Parameter Pollution (?role=admin&role=user)
 	app.use(hpp());
 
 	app.use(generalLimiter);
 
-	if (env.NODE_ENV !== "test") {
-		app.use(morgan(env.NODE_ENV === "development" ? "dev" : "combined"));
-	}
-
-	// Agrega esto en createServer(), antes de las rutas:
-	let dbReady = false;
-	app.use(async (_req, _res, next) => {
-		if (!dbReady) {
-			await connectDatabase();
-			dbReady = true;
-		}
+	// Request ID middleware (always active)
+	app.use((req, res, next) => {
+		const id = (req.headers["x-request-id"] as string) || crypto.randomUUID();
+		req.requestId = id;
+		req.headers["x-request-id"] = id;
+		res.setHeader("X-Request-Id", id);
 		next();
 	});
 
+	// Structured logging (skip in test to avoid noisy output)
+	if (env.NODE_ENV !== "test") {
+		app.use(
+			pinoHttp({
+				logger,
+				genReqId: (req) =>
+					(req.headers["x-request-id"] as string) || crypto.randomUUID(),
+				customProps: (req) => {
+					const user = (req as AuthenticatedRequest).user;
+					return { userId: user?.id ?? null };
+				},
+			}),
+		);
+	}
+
 	// --- Rutas ---
-	app.get("/health", (_req, res) => res.json({ success: true, status: "ok" }));
+	app.get("/health", (_req, res) => {
+		const dbConnected = mongoose.connection.readyState === 1;
+		if (dbConnected) {
+			res.json({ success: true, status: "ok", db: "connected" });
+		} else {
+			res
+				.status(503)
+				.json({ success: false, status: "degraded", db: "disconnected" });
+		}
+	});
 
 	app.use("/api/auth", buildAuthRoutes(authController));
 	app.use("/api/users", buildUserRoutes(userController));

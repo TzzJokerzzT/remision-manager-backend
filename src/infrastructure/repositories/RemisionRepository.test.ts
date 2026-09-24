@@ -6,23 +6,41 @@ import { beforeEach, describe, expect, test, vi } from "bun:test";
 vi.mock("../database/models/Remision.model.js", () => ({
 	RemisionModel: {
 		find: vi.fn(),
+		findOne: vi.fn(),
 		countDocuments: vi.fn(),
 	},
 }));
 
+vi.mock("../database/models/Counter.model.js", () => ({
+	CounterModel: {
+		findOneAndUpdate: vi.fn(),
+		create: vi.fn(),
+	},
+}));
+
 import type { Remision } from "../../domain/entities/Remision.js";
+import { CounterModel } from "../database/models/Counter.model.js";
 import { RemisionModel } from "../database/models/Remision.model.js";
 import { RemisionRepository } from "./RemisionRepository.js";
 
 const findMock = RemisionModel.find as unknown as ReturnType<typeof vi.fn>;
+const findOneMock = RemisionModel.findOne as unknown as ReturnType<
+	typeof vi.fn
+>;
 const countDocumentsMock =
 	RemisionModel.countDocuments as unknown as ReturnType<typeof vi.fn>;
+const counterFindOneAndUpdateMock =
+	CounterModel.findOneAndUpdate as unknown as ReturnType<typeof vi.fn>;
+const counterCreateMock = CounterModel.create as unknown as ReturnType<
+	typeof vi.fn
+>;
 
 type MockQuery = Promise<unknown> & {
 	select: ReturnType<typeof vi.fn>;
 	sort: ReturnType<typeof vi.fn>;
 	skip: ReturnType<typeof vi.fn>;
 	limit: ReturnType<typeof vi.fn>;
+	lean: ReturnType<typeof vi.fn>;
 };
 
 function makeQuery(docs: unknown[]): MockQuery {
@@ -31,6 +49,7 @@ function makeQuery(docs: unknown[]): MockQuery {
 	query.sort = vi.fn(() => query);
 	query.skip = vi.fn(() => query);
 	query.limit = vi.fn(() => query);
+	query.lean = vi.fn(() => query);
 	return query;
 }
 
@@ -79,7 +98,10 @@ function expectedDomain(id: string): Remision {
 
 beforeEach(() => {
 	findMock.mockReset();
+	findOneMock.mockReset();
 	countDocumentsMock.mockReset();
+	counterFindOneAndUpdateMock.mockReset();
+	counterCreateMock.mockReset();
 });
 
 describe("RemisionRepository.listByOwner", () => {
@@ -274,5 +296,81 @@ describe("RemisionRepository.listByOwner", () => {
 		};
 		expect(findMock).toHaveBeenCalledWith(expectedFilter);
 		expect(countDocumentsMock).toHaveBeenCalledWith(expectedFilter);
+	});
+});
+
+describe("RemisionRepository.getNextConsecutive", () => {
+	test("increments existing counter and returns new seq", async () => {
+		counterFindOneAndUpdateMock.mockResolvedValue({ seq: 5 });
+
+		const repo = new RemisionRepository();
+		const result = await repo.getNextConsecutive("comp1");
+
+		expect(result).toBe(5);
+		expect(counterFindOneAndUpdateMock).toHaveBeenCalledWith(
+			{ companyId: "comp1" },
+			{ $inc: { seq: 1 } },
+			{ new: true, upsert: false },
+		);
+	});
+
+	test("seeds counter from last remision when counter is missing", async () => {
+		counterFindOneAndUpdateMock.mockResolvedValue(null);
+
+		const leanMock = vi.fn().mockResolvedValue({ consecutive: 10 });
+		const selectMock = vi.fn().mockReturnValue({ lean: leanMock });
+		const sortMock = vi.fn().mockReturnValue({ select: selectMock });
+		findOneMock.mockReturnValue({ sort: sortMock });
+
+		counterCreateMock.mockResolvedValue({ seq: 11 });
+
+		const repo = new RemisionRepository();
+		const result = await repo.getNextConsecutive("comp1");
+
+		expect(result).toBe(11);
+		expect(findOneMock).toHaveBeenCalledWith({ companyId: "comp1" });
+		expect(counterCreateMock).toHaveBeenCalledWith({
+			companyId: "comp1",
+			seq: 11,
+		});
+	});
+
+	test("starts at 1 when no counter and no remisiones exist", async () => {
+		counterFindOneAndUpdateMock.mockResolvedValue(null);
+
+		const leanMock = vi.fn().mockResolvedValue(null);
+		const selectMock = vi.fn().mockReturnValue({ lean: leanMock });
+		const sortMock = vi.fn().mockReturnValue({ select: selectMock });
+		findOneMock.mockReturnValue({ sort: sortMock });
+
+		counterCreateMock.mockResolvedValue({ seq: 1 });
+
+		const repo = new RemisionRepository();
+		const result = await repo.getNextConsecutive("comp1");
+
+		expect(result).toBe(1);
+		expect(counterCreateMock).toHaveBeenCalledWith({
+			companyId: "comp1",
+			seq: 1,
+		});
+	});
+
+	test("retries atomic increment on duplicate-key race during seed", async () => {
+		counterFindOneAndUpdateMock
+			.mockResolvedValueOnce(null)
+			.mockResolvedValueOnce({ seq: 3 });
+
+		const leanMock = vi.fn().mockResolvedValue({ consecutive: 2 });
+		const selectMock = vi.fn().mockReturnValue({ lean: leanMock });
+		const sortMock = vi.fn().mockReturnValue({ select: selectMock });
+		findOneMock.mockReturnValue({ sort: sortMock });
+
+		counterCreateMock.mockRejectedValue({ code: 11000 });
+
+		const repo = new RemisionRepository();
+		const result = await repo.getNextConsecutive("comp1");
+
+		expect(result).toBe(3);
+		expect(counterFindOneAndUpdateMock).toHaveBeenCalledTimes(2);
 	});
 });

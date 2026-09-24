@@ -3,6 +3,7 @@ import type {
 	IRemisionRepository,
 	RemisionListFilters,
 } from "../../domain/repositories/IRemisionRepository.js";
+import { CounterModel } from "../database/models/Counter.model.js";
 import {
 	type RemisionDocument,
 	RemisionModel,
@@ -92,9 +93,41 @@ export class RemisionRepository implements IRemisionRepository {
 	}
 
 	async getNextConsecutive(companyId: string): Promise<number> {
-		const last = await RemisionModel.findOne({ companyId })
-			.sort({ consecutive: -1 })
-			.select("consecutive");
-		return (last?.consecutive ?? 0) + 1;
+		// Fast path: atomic increment on existing counter
+		const counter = await CounterModel.findOneAndUpdate(
+			{ companyId },
+			{ $inc: { seq: 1 } },
+			{ new: true, upsert: false },
+		);
+		if (counter) return counter.seq;
+
+		// Seed fallback: counter doesn't exist yet, initialize from last remision
+		try {
+			const last = await RemisionModel.findOne({ companyId })
+				.sort({ consecutive: -1 })
+				.select("consecutive")
+				.lean();
+			const startSeq = (last?.consecutive ?? 0) + 1;
+			const created = await CounterModel.create({
+				companyId,
+				seq: startSeq,
+			});
+			return created.seq;
+		} catch (err: unknown) {
+			// Duplicate key race: another request created the counter first
+			if (
+				typeof err === "object" &&
+				err !== null &&
+				(err as { code?: number }).code === 11000
+			) {
+				const retry = await CounterModel.findOneAndUpdate(
+					{ companyId },
+					{ $inc: { seq: 1 } },
+					{ new: true },
+				);
+				if (retry) return retry.seq;
+			}
+			throw err;
+		}
 	}
 }
