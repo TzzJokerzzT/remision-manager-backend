@@ -42,6 +42,13 @@ jobs:
       - name: Test
         run: bun test
         env:
+          NODE_ENV: test
+          MONGO_URI: mongodb://localhost:27017/test
+          JWT_ACCESS_SECRET: ci-test-access-secret-min-32-chars-ok!
+          JWT_REFRESH_SECRET: ci-test-refresh-secret-min-32-chars-ok!
+          CORS_ORIGINS: http://localhost:3000
+          RATE_LIMIT_WINDOW_MS: 900000
+          RATE_LIMIT_MAX: 300
           MONGOMS_DOWNLOAD_TIMEOUT: 120000
 
       - name: Build
