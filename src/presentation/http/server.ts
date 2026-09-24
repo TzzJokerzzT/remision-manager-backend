@@ -85,7 +85,11 @@ export function createServer(): Application {
 		let dbReady = false;
 		app.use(async (_req, _res, next) => {
 			if (!dbReady && mongoose.connection.readyState !== 1) {
-				await connectDatabase();
+				try {
+					await connectDatabase();
+				} catch (err) {
+					logger.error({ err }, "DB connection failed, request may fail");
+				}
 			}
 			dbReady = true;
 			next();
