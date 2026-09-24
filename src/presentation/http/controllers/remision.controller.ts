@@ -1,6 +1,7 @@
 import type { NextFunction, Response } from "express";
 import type { RemisionListQueryDTO } from "../../../application/dtos/remision-list-query.dto.js";
 import type { RemisionUseCases } from "../../../application/use-cases/remision/RemisionUseCases.js";
+import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
 
 export class RemisionController {
@@ -12,10 +13,11 @@ export class RemisionController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const remision = await this.remisionUseCases.create(
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.status(201).json({
 				success: true,
@@ -33,15 +35,16 @@ export class RemisionController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const remision = await this.remisionUseCases.getById(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
 				data: remision,
-				message: "Resultado encontrado exitisamente",
+				message: "Resultado encontrado exitosamente",
 			});
 		} catch (err) {
 			next(err);
@@ -54,9 +57,10 @@ export class RemisionController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const query = req.query as unknown as RemisionListQueryDTO;
 			const remisiones = await this.remisionUseCases.listMine(
-				req.user!.id,
+				req.user.id,
 				query,
 			);
 			res.json({
@@ -75,11 +79,12 @@ export class RemisionController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const remision = await this.remisionUseCases.update(
 				req.params.id,
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -97,10 +102,11 @@ export class RemisionController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			await this.remisionUseCases.delete(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res
 				.status(204)

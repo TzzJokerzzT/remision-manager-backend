@@ -1,5 +1,6 @@
 import type { NextFunction, Response } from "express";
 import type { DriverUseCases } from "../../../application/use-cases/driver/DriverUseCases.js";
+import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
 
 export class DriverController {
@@ -11,10 +12,11 @@ export class DriverController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const driver = await this.driverUseCases.create(
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.status(201).json({
 				success: true,
@@ -32,10 +34,11 @@ export class DriverController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const driver = await this.driverUseCases.getById(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -53,6 +56,7 @@ export class DriverController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const companyId =
 				typeof req.query.companyId === "string"
 					? req.query.companyId
@@ -62,7 +66,7 @@ export class DriverController {
 			const limit = typeof req.query.limit === "number" ? req.query.limit : 20;
 			const page = typeof req.query.page === "number" ? req.query.page : 1;
 			const drivers = await this.driverUseCases.listMine(
-				req.user!.id,
+				req.user.id,
 				companyId,
 				search,
 				{ limit, page },
@@ -83,11 +87,12 @@ export class DriverController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const driver = await this.driverUseCases.update(
 				req.params.id,
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -105,10 +110,11 @@ export class DriverController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			await this.driverUseCases.delete(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res
 				.status(204)

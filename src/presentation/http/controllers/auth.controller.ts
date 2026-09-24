@@ -1,5 +1,6 @@
 import type { NextFunction, Response } from "express";
 import type { AuthUseCases } from "../../../application/use-cases/auth/AuthUseCases.js";
+import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
 
 export class AuthController {
@@ -58,7 +59,8 @@ export class AuthController {
 		next: NextFunction,
 	) => {
 		try {
-			await this.authUseCases.logout(req.user!.id);
+			if (!req.user) throw new UnauthorizedError();
+			await this.authUseCases.logout(req.user.id);
 			res.status(200).json({ success: true, message: "Sesión cerrada" });
 		} catch (err) {
 			next(err);

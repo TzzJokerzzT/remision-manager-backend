@@ -17,7 +17,6 @@ import {
 	startTestDatabase,
 	stopTestDatabase,
 } from "../../../tests/integration/setup.js";
-import { generateAuthHeader } from "../../../tests/integration/helpers/auth.js";
 
 let app: Application;
 

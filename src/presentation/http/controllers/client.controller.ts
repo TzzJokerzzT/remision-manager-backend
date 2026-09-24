@@ -1,5 +1,6 @@
 import type { NextFunction, Response } from "express";
 import type { ClientUseCases } from "../../../application/use-cases/client/ClientUseCases.js";
+import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
 
 export class ClientController {
@@ -11,10 +12,11 @@ export class ClientController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const client = await this.clientUseCases.create(
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.status(201).json({
 				success: true,
@@ -32,10 +34,11 @@ export class ClientController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const client = await this.clientUseCases.getById(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -53,6 +56,7 @@ export class ClientController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const companyId =
 				typeof req.query.companyId === "string"
 					? req.query.companyId
@@ -62,7 +66,7 @@ export class ClientController {
 			const limit = typeof req.query.limit === "number" ? req.query.limit : 20;
 			const page = typeof req.query.page === "number" ? req.query.page : 1;
 			const clients = await this.clientUseCases.listMine(
-				req.user!.id,
+				req.user.id,
 				companyId,
 				search,
 				{ limit, page },
@@ -70,7 +74,7 @@ export class ClientController {
 			res.json({
 				success: true,
 				data: clients,
-				messsage: "Resultados encontrados exitosamente",
+				message: "Resultados encontrados exitosamente",
 			});
 		} catch (err) {
 			next(err);
@@ -83,11 +87,12 @@ export class ClientController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const client = await this.clientUseCases.update(
 				req.params.id,
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -105,14 +110,15 @@ export class ClientController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			await this.clientUseCases.delete(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res
 				.status(204)
-				.json({ message: "Cliente eliminado exitosamnete" })
+				.json({ message: "Cliente eliminado exitosamente" })
 				.send();
 		} catch (err) {
 			next(err);

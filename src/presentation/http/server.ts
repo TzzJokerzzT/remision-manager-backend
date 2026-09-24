@@ -3,8 +3,8 @@ import express, { type Application } from "express";
 import mongoSanitize from "express-mongo-sanitize";
 import helmet from "helmet";
 import hpp from "hpp";
+import mongoose from "mongoose";
 import pinoHttp from "pino-http";
-
 import { env } from "../../config/env.js";
 import {
 	authController,
@@ -14,9 +14,9 @@ import {
 	remisionController,
 	userController,
 } from "../../di/container.js";
-import mongoose from "mongoose";
 import { connectDatabase } from "../../infrastructure/database/mongoose.js";
 import { logger } from "../../shared/logger.js";
+import type { AuthenticatedRequest } from "./middlewares/authenticate.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { generalLimiter } from "./middlewares/rateLimiter.js";
 import { buildAuthRoutes } from "./routes/auth.routes.js";
@@ -25,8 +25,6 @@ import { buildCompanyRoutes } from "./routes/company.routes.js";
 import { buildDriverRoutes } from "./routes/driver.routes.js";
 import { buildRemisionRoutes } from "./routes/remision.routes.js";
 import { buildUserRoutes } from "./routes/user.routes.js";
-
-import type { AuthenticatedRequest } from "./middlewares/authenticate.js";
 
 export function createServer(): Application {
 	const app = express();

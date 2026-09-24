@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { JwtService } from "../../../infrastructure/security/jwt.service.js";
+import { verifyAccessToken } from "../../../infrastructure/security/jwt.service.js";
 import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 
 export interface AuthenticatedRequest extends Request {
@@ -18,13 +18,13 @@ export function authenticate(
 	}
 
 	const header = req.headers.authorization;
-	if (!header || !header.startsWith("Bearer ")) {
+	if (!header?.startsWith("Bearer ")) {
 		next(new UnauthorizedError("Token no proporcionado"));
 		return;
 	}
 	const token = header.slice(7);
 	try {
-		const payload = JwtService.verifyAccessToken(token);
+		const payload = verifyAccessToken(token);
 		req.user = { id: payload.sub, role: payload.role };
 		next();
 	} catch {

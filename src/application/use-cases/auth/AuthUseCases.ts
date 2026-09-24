@@ -3,9 +3,14 @@ import type { IUserRepository } from "../../../domain/repositories/IUserReposito
 import { sha256 } from "../../../infrastructure/security/hash.util.js";
 import {
 	type JwtPayload,
-	JwtService,
+	signAccessToken,
+	signRefreshToken,
+	verifyRefreshToken,
 } from "../../../infrastructure/security/jwt.service.js";
-import { PasswordService } from "../../../infrastructure/security/password.service.js";
+import {
+	comparePassword,
+	hashPassword,
+} from "../../../infrastructure/security/password.service.js";
 import {
 	ConflictError,
 	UnauthorizedError,
@@ -61,7 +66,7 @@ export class AuthUseCases {
 		const existing = await this.userRepo.findByEmail(dto.email);
 		if (existing) throw new ConflictError("Ya existe un usuario con ese email");
 
-		const passwordHash = await PasswordService.hash(dto.password);
+		const passwordHash = await hashPassword(dto.password);
 		const isFirstUser = (await this.userRepo.list({})).length === 0;
 
 		const user = await this.userRepo.create({
@@ -78,13 +83,9 @@ export class AuthUseCases {
 
 	async login(dto: LoginDto): Promise<{ user: SafeUser; tokens: TokenPair }> {
 		const user = await this.userRepo.findByEmail(dto.email);
-		if (!user || !user.isActive)
-			throw new UnauthorizedError("Credenciales inválidas");
+		if (!user?.isActive) throw new UnauthorizedError("Credenciales inválidas");
 
-		const valid = await PasswordService.compare(
-			dto.password,
-			user.passwordHash,
-		);
+		const valid = await comparePassword(dto.password, user.passwordHash);
 		if (!valid) throw new UnauthorizedError("Credenciales inválidas");
 
 		const tokens = await this.issueTokens(user.id, user.role);
@@ -94,7 +95,7 @@ export class AuthUseCases {
 	async refresh(refreshToken: string): Promise<TokenPair> {
 		let payload: JwtPayload;
 		try {
-			payload = JwtService.verifyRefreshToken(refreshToken);
+			payload = verifyRefreshToken(refreshToken);
 		} catch {
 			throw new UnauthorizedError("Refresh token inválido o expirado");
 		}
@@ -105,8 +106,7 @@ export class AuthUseCases {
 		}
 
 		const user = await this.userRepo.findById(payload.sub);
-		if (!user || !user.isActive)
-			throw new UnauthorizedError("Usuario no válido");
+		if (!user?.isActive) throw new UnauthorizedError("Usuario no válido");
 
 		// Rotación: el refresh token anterior queda invalidado al emitir uno nuevo
 		return this.issueTokens(user.id, user.role);
@@ -120,8 +120,8 @@ export class AuthUseCases {
 		userId: string,
 		role: "admin" | "user",
 	): Promise<TokenPair> {
-		const accessToken = JwtService.signAccessToken({ sub: userId, role });
-		const refreshToken = JwtService.signRefreshToken({ sub: userId, role });
+		const accessToken = signAccessToken({ sub: userId, role });
+		const refreshToken = signRefreshToken({ sub: userId, role });
 		await this.userRepo.setRefreshTokenHash(userId, sha256(refreshToken));
 		return { accessToken, refreshToken };
 	}

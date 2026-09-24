@@ -9,9 +9,9 @@ import {
 	expect,
 	test,
 } from "bun:test";
+import cors from "cors";
 import type { Application } from "express";
 import express from "express";
-import cors from "cors";
 import request from "supertest";
 import { cleanDatabase, startTestDatabase, stopTestDatabase } from "./setup.js";
 

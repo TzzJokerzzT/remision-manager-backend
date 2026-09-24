@@ -1,5 +1,6 @@
 import type { NextFunction, Response } from "express";
 import type { CompanyUseCases } from "../../../application/use-cases/company/CompanyUseCases.js";
+import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
 
 export class CompanyController {
@@ -11,7 +12,8 @@ export class CompanyController {
 		next: NextFunction,
 	) => {
 		try {
-			const company = await this.companyUseCases.create(req.body, req.user!.id);
+			if (!req.user) throw new UnauthorizedError();
+			const company = await this.companyUseCases.create(req.body, req.user.id);
 			res.status(201).json({
 				success: true,
 				data: company,
@@ -28,10 +30,11 @@ export class CompanyController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const company = await this.companyUseCases.getById(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -49,19 +52,20 @@ export class CompanyController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const search =
 				typeof req.query.search === "string" ? req.query.search : undefined;
 			const limit = typeof req.query.limit === "number" ? req.query.limit : 20;
 			const page = typeof req.query.page === "number" ? req.query.page : 1;
 			const companies = await this.companyUseCases.listMine(
-				req.user!.id,
+				req.user.id,
 				search,
 				{ limit, page },
 			);
 			res.json({
 				success: true,
 				data: companies,
-				message: "Resultados encontrado exitosamente",
+				message: "Resultados encontrados exitosamente",
 			});
 		} catch (err) {
 			next(err);
@@ -74,11 +78,12 @@ export class CompanyController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const company = await this.companyUseCases.update(
 				req.params.id,
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -96,10 +101,11 @@ export class CompanyController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			await this.companyUseCases.delete(
 				req.params.id,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res
 				.status(204)

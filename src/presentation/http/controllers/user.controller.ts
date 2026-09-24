@@ -1,5 +1,6 @@
 import type { NextFunction, Response } from "express";
 import type { UserUseCases } from "../../../application/use-cases/user/UserUseCases.js";
+import { UnauthorizedError } from "../../../shared/errors/AppError.js";
 import type { AuthenticatedRequest } from "../middlewares/authenticate.js";
 
 export class UserController {
@@ -7,7 +8,8 @@ export class UserController {
 
 	me = async (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
 		try {
-			const user = await this.userUseCases.getById(req.user!.id);
+			if (!req.user) throw new UnauthorizedError();
+			const user = await this.userUseCases.getById(req.user.id);
 			res.json({
 				success: true,
 				data: user,
@@ -58,11 +60,12 @@ export class UserController {
 		next: NextFunction,
 	) => {
 		try {
+			if (!req.user) throw new UnauthorizedError();
 			const user = await this.userUseCases.update(
 				req.params.id,
 				req.body,
-				req.user!.id,
-				req.user!.role,
+				req.user.id,
+				req.user.role,
 			);
 			res.json({
 				success: true,
@@ -80,11 +83,8 @@ export class UserController {
 		next: NextFunction,
 	) => {
 		try {
-			await this.userUseCases.delete(
-				req.params.id,
-				req.user!.id,
-				req.user!.role,
-			);
+			if (!req.user) throw new UnauthorizedError();
+			await this.userUseCases.delete(req.params.id, req.user.id, req.user.role);
 			res
 				.status(204)
 				.json({ message: "Usuario eliminado exitosamente" })

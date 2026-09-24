@@ -1,10 +1,10 @@
-import { JwtService } from "../../../infrastructure/security/jwt.service.js";
+import { signAccessToken } from "../../../infrastructure/security/jwt.service.js";
 
 export function generateAccessToken(
 	userId: string,
 	role: "admin" | "user" = "user",
 ): string {
-	return JwtService.signAccessToken({ sub: userId, role });
+	return signAccessToken({ sub: userId, role });
 }
 
 export function generateAuthHeader(
