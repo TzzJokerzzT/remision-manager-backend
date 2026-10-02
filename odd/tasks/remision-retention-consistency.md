@@ -1,8 +1,8 @@
 # Feature: Remision retention consistency
 
-**Status**: implemented, verified — awaiting commit authorization
+**Status**: closed — work-unit commit `bc47d7c`
 **Origin**: read-only review of `140329c` (branch `production`)
-**Branch**: pending (currently on `production`)
+**Branch**: `feat/remision-retention-consistency` (branched from `production`, not pushed)
 
 ## Problem
 
@@ -46,7 +46,7 @@ update path persisted internally inconsistent documents:
 - [x] 5. Remove the `updateRemisionSchema` refine and align `remision.dto.test.ts`
 - [x] 6. Document `documentType` and retención (fields and total formula) in README
 - [x] 7. Verify: `bun test`, `tsc --noEmit`, `biome check .`
-- [ ] 8. Work-unit commit (pending user authorization)
+- [x] 8. Work-unit commit: `bc47d7c` on `feat/remision-retention-consistency`
 
 ## Evidence
 
@@ -73,4 +73,6 @@ update path persisted internally inconsistent documents:
   `DriverRepository.ts:47` and `UserRepository.ts:40` share the same raw-passthrough
   shape. Their use cases pass the parsed Zod DTO directly, which never carries explicit
   `undefined`, so the defect is latent there rather than active. Optional hardening.
-- **Commit** — pending user authorization (currently on `production`; branch first).
+- **Work-unit commit** — `bc47d7c` `fix(remision): keep retention and totals consistent on update`
+  on `feat/remision-retention-consistency`, branched from `production` and **not pushed**.
+  8 files, +365 / -36. The pre-commit hook (typecheck → lint → test → build) passed.
