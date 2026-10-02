@@ -8,6 +8,7 @@ vi.mock("../database/models/Remision.model.js", () => ({
 		find: vi.fn(),
 		findOne: vi.fn(),
 		countDocuments: vi.fn(),
+		findByIdAndUpdate: vi.fn(),
 	},
 }));
 
@@ -29,6 +30,8 @@ const findOneMock = RemisionModel.findOne as unknown as ReturnType<
 >;
 const countDocumentsMock =
 	RemisionModel.countDocuments as unknown as ReturnType<typeof vi.fn>;
+const findByIdAndUpdateMock =
+	RemisionModel.findByIdAndUpdate as unknown as ReturnType<typeof vi.fn>;
 const counterFindOneAndUpdateMock =
 	CounterModel.findOneAndUpdate as unknown as ReturnType<typeof vi.fn>;
 const counterCreateMock = CounterModel.create as unknown as ReturnType<
@@ -104,6 +107,7 @@ beforeEach(() => {
 	findMock.mockReset();
 	findOneMock.mockReset();
 	countDocumentsMock.mockReset();
+	findByIdAndUpdateMock.mockReset();
 	counterFindOneAndUpdateMock.mockReset();
 	counterCreateMock.mockReset();
 });
@@ -376,5 +380,49 @@ describe("RemisionRepository.getNextConsecutive", () => {
 
 		expect(result).toBe(3);
 		expect(counterFindOneAndUpdateMock).toHaveBeenCalledTimes(2);
+	});
+});
+
+describe("RemisionRepository.update", () => {
+	test("sends $unset for explicit undefined and $set for defined values", async () => {
+		findByIdAndUpdateMock.mockResolvedValue(makeDoc("id1"));
+
+		const repo = new RemisionRepository();
+		await repo.update("id1", {
+			retencionValue: undefined,
+			total: 100,
+			notes: "foo",
+		});
+
+		expect(findByIdAndUpdateMock).toHaveBeenCalledWith(
+			"id1",
+			{
+				$set: { total: 100, notes: "foo" },
+				$unset: { retencionValue: 1 },
+			},
+			{ new: true, runValidators: true },
+		);
+	});
+
+	test("sends only $set and no $unset when no undefined values", async () => {
+		findByIdAndUpdateMock.mockResolvedValue(makeDoc("id1"));
+
+		const repo = new RemisionRepository();
+		await repo.update("id1", { total: 100, notes: "foo" });
+
+		expect(findByIdAndUpdateMock).toHaveBeenCalledWith(
+			"id1",
+			{ $set: { total: 100, notes: "foo" } },
+			{ new: true, runValidators: true },
+		);
+	});
+
+	test("returns the mapped domain object for the returned document", async () => {
+		findByIdAndUpdateMock.mockResolvedValue(makeDoc("id1"));
+
+		const repo = new RemisionRepository();
+		const result = await repo.update("id1", { notes: "foo" });
+
+		expect(result).toEqual(expectedDomain("id1"));
 	});
 });

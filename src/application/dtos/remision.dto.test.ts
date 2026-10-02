@@ -104,6 +104,23 @@ describe("createRemisionSchema", () => {
 			);
 		}
 	});
+
+	test("rejects hasRetencion true without retencionPercentage", () => {
+		const result = createRemisionSchema.safeParse({
+			type: "priced",
+			companyId,
+			clientId,
+			items: [{ description: "Item", quantity: 1, unitPrice: 10 }],
+			hasRetencion: true,
+		});
+
+		expect(result.success).toBe(false);
+		if (!result.success) {
+			expect(
+				result.error.issues.some((i) => i.path.includes("retencionPercentage")),
+			).toBe(true);
+		}
+	});
 });
 
 describe("updateRemisionSchema", () => {
@@ -119,5 +136,11 @@ describe("updateRemisionSchema", () => {
 				items: [{ description: "Item", quantity: 1, unitPrice: 5 }],
 			}).success,
 		).toBe(true);
+	});
+
+	test("accepts hasRetencion true without retencionPercentage", () => {
+		expect(updateRemisionSchema.safeParse({ hasRetencion: true }).success).toBe(
+			true,
+		);
 	});
 });
