@@ -34,7 +34,9 @@ type LooseSchema = {
 };
 
 type LooseOperation = {
+	operationId?: string;
 	security?: unknown;
+	parameters?: Array<{ name?: string; in?: string }>;
 	requestBody?: {
 		content?: Record<string, { schema?: unknown; example?: unknown }>;
 	};
@@ -54,6 +56,25 @@ type LooseDocument = {
 };
 
 const document = buildOpenApiDocument() as unknown as LooseDocument;
+
+// Collects every `$ref` value in the generated document so tests can prove a
+// schema is emitted as a reference instead of an inline copy.
+function collectRefs(node: unknown, refs = new Set<string>()): Set<string> {
+	if (Array.isArray(node)) {
+		for (const item of node) collectRefs(item, refs);
+		return refs;
+	}
+	if (node && typeof node === "object") {
+		for (const [key, value] of Object.entries(node)) {
+			if (key === "$ref" && typeof value === "string") {
+				refs.add(value);
+			} else {
+				collectRefs(value, refs);
+			}
+		}
+	}
+	return refs;
+}
 
 describe("OpenAPI document", () => {
 	test("is OpenAPI 3.0.3 and declares the bearerAuth scheme", () => {
@@ -147,6 +168,138 @@ describe("OpenAPI document", () => {
 		const errorEnvelope = document.components?.schemas?.ErrorEnvelope;
 		expect(errorEnvelope?.properties).toHaveProperty("details");
 		expect(errorEnvelope?.required).not.toContain("details");
+	});
+
+	test("exposes the full inventory: 16 path items and 30 operations", () => {
+		const paths = document.paths ?? {};
+		expect(Object.keys(paths)).toHaveLength(16);
+
+		const operations = Object.entries(paths).flatMap(([path, item]) =>
+			Object.entries(item ?? {}).map(([method, operation]) => ({
+				path,
+				method,
+				operation,
+			})),
+		);
+		expect(operations).toHaveLength(30);
+
+		const operationIds = operations
+			.map(({ operation }) => operation?.operationId)
+			.filter((id): id is string => typeof id === "string");
+
+		expect(operationIds).toHaveLength(30);
+		expect([...operationIds].sort()).toEqual(
+			[
+				"getHealth",
+				"createRemision",
+				"listRemisiones",
+				"getRemisionById",
+				"updateRemision",
+				"deleteRemision",
+				"registerUser",
+				"loginUser",
+				"refreshToken",
+				"logoutUser",
+				"getCurrentUser",
+				"listUsers",
+				"getUserById",
+				"updateUser",
+				"deleteUser",
+				"createCompany",
+				"listCompanies",
+				"getCompanyById",
+				"updateCompany",
+				"deleteCompany",
+				"createClient",
+				"listClients",
+				"getClientById",
+				"updateClient",
+				"deleteClient",
+				"createDriver",
+				"listDrivers",
+				"getDriverById",
+				"updateDriver",
+				"deleteDriver",
+			].sort(),
+		);
+	});
+
+	test("applies per-module security and documents 403 on the admin list", () => {
+		const paths = document.paths ?? {};
+
+		for (const publicPath of [
+			"/api/auth/register",
+			"/api/auth/login",
+			"/api/auth/refresh",
+		]) {
+			expect(paths[publicPath]?.post?.security).toEqual([]);
+		}
+
+		const publicPaths = new Set([
+			"/health",
+			"/api/auth/register",
+			"/api/auth/login",
+			"/api/auth/refresh",
+		]);
+
+		for (const [path, item] of Object.entries(paths)) {
+			if (publicPaths.has(path)) continue;
+			for (const operation of Object.values(item ?? {})) {
+				expect(operation?.security).toEqual([{ bearerAuth: [] }]);
+			}
+		}
+
+		expect(paths["/api/users"]?.get?.responses).toHaveProperty("403");
+	});
+
+	test("documents the real list filters and the company duplicate conflict", () => {
+		const paths = document.paths ?? {};
+		const queryNames = (path: string) =>
+			(paths[path]?.get?.parameters ?? [])
+				.filter((p) => p.in === "query")
+				.map((p) => p.name);
+
+		expect(queryNames("/api/clients")).toEqual(
+			expect.arrayContaining(["limit", "page", "companyId", "search"]),
+		);
+		expect(queryNames("/api/drivers")).toEqual(
+			expect.arrayContaining(["limit", "page", "companyId", "search"]),
+		);
+		expect(queryNames("/api/companies")).toEqual(
+			expect.arrayContaining(["limit", "page", "search"]),
+		);
+		expect(queryNames("/api/companies")).not.toContain("companyId");
+
+		expect(
+			Object.keys(paths["/api/companies/{id}"]?.patch?.responses ?? {}),
+		).toContain("409");
+	});
+
+	test("documents pagination query parameters on the paginated list operations", () => {
+		const paths = document.paths ?? {};
+		for (const path of ["/api/companies", "/api/clients", "/api/drivers"]) {
+			const names = (paths[path]?.get?.parameters ?? []).map((p) => p.name);
+			expect(names).toContain("limit");
+			expect(names).toContain("page");
+		}
+	});
+
+	test("references each new response schema by $ref (not inlined)", () => {
+		const refs = collectRefs(document);
+		const schemaNames = [
+			"User",
+			"UserList",
+			"Company",
+			"CompanyList",
+			"Client",
+			"ClientList",
+			"Driver",
+			"DriverList",
+		];
+		for (const name of schemaNames) {
+			expect(document.components?.schemas).toHaveProperty(name);
+			expect(refs.has(`#/components/schemas/${name}`)).toBe(true);
+		}
 	});
 });
 

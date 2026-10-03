@@ -1,7 +1,11 @@
 import { extendZodWithOpenApi } from "@asteasolutions/zod-to-openapi";
 import { z } from "zod";
 import type { PaginationResponseDTO } from "../../../application/dtos/pagination.dto.js";
+import type { Client } from "../../../domain/entities/Client.js";
+import type { Company } from "../../../domain/entities/Company.js";
+import type { Driver } from "../../../domain/entities/Driver.js";
 import type { Remision } from "../../../domain/entities/Remision.js";
+import type { SafeUser } from "../../../domain/entities/User.js";
 
 // `.openapi()` also powers the `registry.register()` calls in openapi.ts, so it
 // must be applied once before any schema below is defined.
@@ -83,6 +87,144 @@ export const remisionListSchema = z
 			"Página de remisiones (`items`, `total`, `limit`, `page`, `totalPages`).",
 	});
 
+export const userSchema = z
+	.object({
+		id: z.string(),
+		name: z.string(),
+		email: z.string(),
+		role: z.enum(["admin", "user"]),
+		companyLogoUrl: z.string().url().max(500).nullable().optional(),
+		isActive: z.boolean(),
+		createdAt: z.string(),
+		updatedAt: z.string(),
+	})
+	.openapi("User", {
+		description: "Usuario devuelto por la API (sin `passwordHash`).",
+	});
+
+// `GET /api/users` devuelve un arreglo plano de usuarios, no una página.
+export const userListSchema = z.array(userSchema).openapi("UserList", {
+	description: "Lista de usuarios (arreglo plano).",
+});
+
+export const companySchema = z
+	.object({
+		id: z.string(),
+		name: z.string(),
+		nit: z.string(),
+		address: z.string().optional(),
+		phone: z.string().optional(),
+		email: z.string().optional(),
+		logoUrl: z.string().url().max(500).nullable().optional(),
+		ownerId: z.string(),
+		createdAt: z.string(),
+		updatedAt: z.string(),
+	})
+	.openapi("Company", {
+		description: "Empresa devuelta por la API.",
+	});
+
+export const companyListSchema = z
+	.object({
+		items: z.array(companySchema),
+		total: z.number(),
+		limit: z.number(),
+		page: z.number(),
+		totalPages: z.number(),
+	})
+	.openapi("CompanyList", {
+		description:
+			"Página de empresas (`items`, `total`, `limit`, `page`, `totalPages`).",
+	});
+
+export const clientSchema = z
+	.object({
+		id: z.string(),
+		name: z.string(),
+		documentId: z.string(),
+		address: z.string().optional(),
+		phone: z.string().optional(),
+		email: z.string().optional(),
+		companyId: z.string(),
+		ownerId: z.string(),
+		createdAt: z.string(),
+		updatedAt: z.string(),
+	})
+	.openapi("Client", {
+		description: "Cliente devuelto por la API.",
+	});
+
+export const clientListSchema = z
+	.object({
+		items: z.array(clientSchema),
+		total: z.number(),
+		limit: z.number(),
+		page: z.number(),
+		totalPages: z.number(),
+	})
+	.openapi("ClientList", {
+		description:
+			"Página de clientes (`items`, `total`, `limit`, `page`, `totalPages`).",
+	});
+
+export const driverSchema = z
+	.object({
+		id: z.string(),
+		name: z.string(),
+		documentId: z.string(),
+		licenseNumber: z.string().optional(),
+		phone: z.string().optional(),
+		vehiclePlate: z.string().optional(),
+		companyId: z.string(),
+		ownerId: z.string(),
+		createdAt: z.string(),
+		updatedAt: z.string(),
+	})
+	.openapi("Driver", {
+		description: "Conductor devuelto por la API.",
+	});
+
+export const driverListSchema = z
+	.object({
+		items: z.array(driverSchema),
+		total: z.number(),
+		limit: z.number(),
+		page: z.number(),
+		totalPages: z.number(),
+	})
+	.openapi("DriverList", {
+		description:
+			"Página de conductores (`items`, `total`, `limit`, `page`, `totalPages`).",
+	});
+
+// Los datos de auth no tienen entidad de dominio propia: se derivan de los
+// tipos de retorno de los casos de uso y los controllers (sin drift guard).
+export const tokenPairSchema = z
+	.object({
+		accessToken: z.string(),
+		refreshToken: z.string(),
+	})
+	.openapi("TokenPair", {
+		description: "Par de tokens JWT (access + refresh).",
+	});
+
+export const registerDataSchema = z
+	.object({
+		user: userSchema,
+	})
+	.openapi("RegisterData", {
+		description: "Usuario registrado (`data` del envoltorio de éxito).",
+	});
+
+export const loginDataSchema = z
+	.object({
+		user: userSchema,
+		tokens: tokenPairSchema,
+	})
+	.openapi("LoginData", {
+		description: "Usuario y tokens del login (`data` del envoltorio de éxito).",
+	});
+
 // Shape reference for the success envelope. Each operation extends it with a
 // concrete `data` schema (`successEnvelope()` in openapi.ts), so it is not a
 // registered component: a shared ref would dangle once `data` differs.
@@ -112,5 +254,46 @@ export type RemisionListSchemaDriftGuard = Assert<
 	IsEqual<
 		z.infer<typeof remisionListSchema>,
 		Jsonify<PaginationResponseDTO<RemisionWithClient>>
+	>
+>;
+
+export type UserSchemaDriftGuard = Assert<
+	IsEqual<z.infer<typeof userSchema>, Jsonify<SafeUser>>
+>;
+
+export type UserListSchemaDriftGuard = Assert<
+	IsEqual<z.infer<typeof userListSchema>, Jsonify<SafeUser[]>>
+>;
+
+export type CompanySchemaDriftGuard = Assert<
+	IsEqual<z.infer<typeof companySchema>, Jsonify<Company>>
+>;
+
+export type CompanyListSchemaDriftGuard = Assert<
+	IsEqual<
+		z.infer<typeof companyListSchema>,
+		Jsonify<PaginationResponseDTO<Company>>
+	>
+>;
+
+export type ClientSchemaDriftGuard = Assert<
+	IsEqual<z.infer<typeof clientSchema>, Jsonify<Client>>
+>;
+
+export type ClientListSchemaDriftGuard = Assert<
+	IsEqual<
+		z.infer<typeof clientListSchema>,
+		Jsonify<PaginationResponseDTO<Client>>
+	>
+>;
+
+export type DriverSchemaDriftGuard = Assert<
+	IsEqual<z.infer<typeof driverSchema>, Jsonify<Driver>>
+>;
+
+export type DriverListSchemaDriftGuard = Assert<
+	IsEqual<
+		z.infer<typeof driverListSchema>,
+		Jsonify<PaginationResponseDTO<Driver>>
 	>
 >;

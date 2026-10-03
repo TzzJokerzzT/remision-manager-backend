@@ -96,9 +96,9 @@ infrastructure that unit 1 already proved with tests.
 
 ### Unit 2 — remaining modules
 
-- [ ] 10. Register auth (4), users (5), companies (5), clients (5), drivers (5) with their schemas and error responses
-- [ ] 11. Tests for the full path inventory (30 paths) and per-module security
-- [ ] 12. Verify and update the README endpoint tables to point at the docs
+- [x] 10. Register auth (4), users (5), companies (5), clients (5), drivers (5) with their schemas and error responses
+- [x] 11. Tests for the full inventory (16 path items / 30 operations) and per-module security
+- [x] 12. Verify and update the README endpoint tables to point at the docs
 
 ## Non-goals
 
@@ -138,3 +138,38 @@ infrastructure that unit 1 already proved with tests.
   definition that the per-operation builder extends. Spec re-checked: 3 paths, 4 components, `$ref`
   on the 201 payload.
 - **Unit 1 scope** — 2 path items plus `/health`, 6 operations. The 30-path goal is unit 2.
+
+### Unit 2 evidence
+
+- **GREEN** — `bun test`: **184 pass / 0 fail / 511 expect() calls**, 23 files (179 after unit 1, plus
+  4 new tests and 1 more for the spec gaps below). `tsc --noEmit` clean, `biome check .` clean.
+- **Inventory observed from the built document**: 16 path items, 30 operations, 15 components; public
+  operations are `/health`, `register`, `login` and `refresh`.
+- **Independent verification** (gentle-ai-verify, read-only) — the writer declared test-first
+  "not applicable" for this unit, so the verifier compensated by proving the new tests **can** fail:
+  removing a path registration, flipping an operation's `security` and inlining a `$ref` each broke
+  the corresponding assertion. It also confirmed the 8 new drift guards are bidirectional (extra and
+  missing fields both fail `tsc` with `TS2344`, control included), that two non-remisión request
+  bodies match their DTOs exactly, that `GET /api/users` really is unpaginated, and that nothing
+  pre-existing was weakened.
+- **Three spec gaps the verification found, all fixed before the commit** — a spec that lies by
+  omission is worse than no spec:
+  1. `PATCH /api/companies/{id}` can return 409 (unique index `{ownerId, nit}` plus an unchecked
+     update) and did not document it. Now documented, with the reason.
+  2. The clients and drivers lists accept `companyId` and `search` (the controllers read them and
+     `paginationQuerySchema` is `.passthrough()`), but only `limit`/`page` were documented. Now
+     declared per module — and the companies list correctly gets `search` only, because it does not
+     read `companyId`.
+  3. `registerSchema` requires an uppercase, a lowercase and a digit, but zod-to-openapi can emit
+     only one `pattern`, so the spec showed just `[A-Z]`. The full rule is now prose in the operation
+     description, consistent with how the other non-expressible refinements are handled.
+- **Known limitations, stated rather than hidden** — `TokenPair`, `RegisterData` and `LoginData` have
+  no entity interface to guard against (they are derived from the auth use-case return types), and
+  the inline `/health`, refresh and logout bodies are unguarded by construction. The `$ref` assertion
+  catches refId-less inlining only: swapping in the registered schema keeps the refId, so that test is
+  narrower than it looks.
+- **API inconsistencies surfaced by documenting them** — `POST /api/auth/refresh` returns
+  `{success, data}` and `POST /api/auth/logout` returns `{success, message}`; neither follows the
+  `{success, data, message}` envelope the rest of the API uses, and both are documented faithfully
+  instead of forced into the shared envelope. `GET /api/users` is also unpaginated while clients,
+  companies and drivers paginate.

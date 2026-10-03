@@ -291,6 +291,8 @@ ENABLE_API_DOCS=true
 
 ## Endpoints
 
+> **Referencia autoritativa**: la especificación OpenAPI completa — generada desde los DTOs Zod y siempre sincronizada con el contrato de validación — se sirve en **`/api-docs`** (Swagger UI) y **`/api-docs/openapi.json`** (JSON). Las tablas de abajo son un resumen rápido; para firmas, parámetros, códigos de error y ejemplos consulta la UI.
+
 Todas las rutas (excepto `/register`, `/login`, `/refresh`) requieren el header:
 ```
 Authorization: Bearer <accessToken>
