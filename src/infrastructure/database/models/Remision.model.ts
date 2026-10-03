@@ -8,6 +8,9 @@ interface RemisionItemSub {
 	description: string;
 	quantity: number;
 	unitPrice?: number;
+	hasIva?: boolean;
+	ivaPercentage?: number;
+	ivaValue?: number;
 }
 
 export interface RemisionDocument extends Document {
@@ -19,7 +22,6 @@ export interface RemisionDocument extends Document {
 	driverId?: Types.ObjectId;
 	items: RemisionItemSub[];
 	subtotal?: number;
-	ivaPercentage?: number;
 	ivaValue?: number;
 	hasRetencion: boolean;
 	retencionPercentage?: number;
@@ -36,6 +38,9 @@ const itemSchema = new Schema<RemisionItemSub>(
 		description: { type: String, required: true, trim: true, maxlength: 250 },
 		quantity: { type: Number, required: true, min: 0.0001 },
 		unitPrice: { type: Number, min: 0 },
+		hasIva: { type: Boolean },
+		ivaPercentage: { type: Number, min: 0, max: 100 },
+		ivaValue: { type: Number, min: 0 },
 	},
 	{ _id: false },
 );
@@ -64,7 +69,6 @@ const remisionSchema = new Schema<RemisionDocument>(
 			validate: (v: unknown[]) => v.length > 0,
 		},
 		subtotal: { type: Number, min: 0 },
-		ivaPercentage: { type: Number, min: 0, max: 100 },
 		ivaValue: { type: Number, min: 0 },
 		hasRetencion: { type: Boolean, default: false },
 		retencionPercentage: { type: Number, min: 0, max: 100 },
