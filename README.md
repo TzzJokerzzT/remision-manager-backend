@@ -336,12 +336,29 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 | DELETE | `/:id` | Eliminar remisión | Sí |
 
 **Tipos de remisión:**
-- `priced`: calcula `subtotal`, `ivaValue` y `total` automáticamente a partir de `items` e `ivaPercentage`.
+- `priced`: calcula `subtotal`, `ivaValue` y `total` automáticamente a partir de `items` (IVA por item).
 - `quantity_only`: omite esos cálculos (solo registra cantidades).
 
 El campo `documentType` indica el tipo de documento (`remision` u `orden_compra`) y por defecto es `remision`.
 
 El campo `consecutive` se autogenera por empresa.
+
+**IVA por item:**
+Cada item define su propio IVA:
+
+- `hasIva`: indica si el producto grava IVA (`true`/`false`). Es **requerido** en cada item de las peticiones de creación/actualización.
+- `ivaPercentage`: porcentaje de IVA del item (requerido y mayor a `0` cuando `hasIva` es `true`; debe estar ausente o ser `0` cuando `hasIva` es `false`).
+- `ivaValue`: valor de IVA del item, **calculado por el servidor** (nunca se acepta desde el cliente).
+
+El `ivaValue` de la remisión se calcula como la suma de los `ivaValue` de los items gravados:
+
+- Por item gravado: `round2(quantity × unitPrice × ivaPercentage / 100)`.
+- Por item exento (`hasIva: false`): sin `ivaValue`.
+- Total de la remisión: `round2(Σ ivaValue por item)` (sobre los valores ya redondeados).
+
+El `ivaValue` de la remisión se acepta del cliente como verificación opcional: si se envía y no coincide con el valor calculado, la petición se rechaza con `422`.
+
+> **Cambio de ruptura**: el `ivaPercentage` a nivel de remisión fue eliminado. Los clientes deben enviar ahora `hasIva` (y `ivaPercentage` cuando aplique) por cada item.
 
 **Retención en la fuente:**
 - `hasRetencion`: indica si la remisión aplica retención en la fuente (`true`/`false`).
