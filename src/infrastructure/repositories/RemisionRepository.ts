@@ -20,7 +20,6 @@ function toDomain(doc: RemisionDocument): Remision {
 		driverId: doc.driverId?.toString(),
 		items: doc.items,
 		subtotal: doc.subtotal,
-		ivaPercentage: doc.ivaPercentage,
 		ivaValue: doc.ivaValue,
 		hasRetencion: doc.hasRetencion,
 		retencionPercentage: doc.retencionPercentage,

@@ -23,9 +23,17 @@ function makeRemision(id: string): Remision {
 		companyId: "comp1",
 		clientId: "cli1",
 		driverId: "drv1",
-		items: [{ description: "Item", quantity: 2, unitPrice: 10 }],
+		items: [
+			{
+				description: "Item",
+				quantity: 2,
+				unitPrice: 10,
+				hasIva: true,
+				ivaPercentage: 19,
+				ivaValue: 3.8,
+			},
+		],
 		subtotal: 20,
-		ivaPercentage: 19,
 		ivaValue: 3.8,
 		hasRetencion: false,
 		total: 23.8,
@@ -394,8 +402,15 @@ describe("RemisionUseCases.create", () => {
 				companyId: "comp1",
 				clientId: "cli1",
 				driverId: "drv1",
-				items: [{ description: "Item", quantity: 2, unitPrice: 10 }],
-				ivaPercentage: 19,
+				items: [
+					{
+						description: "Item",
+						quantity: 2,
+						unitPrice: 10,
+						hasIva: true,
+						ivaPercentage: 19,
+					},
+				],
 				hasRetencion: false,
 			},
 			"owner1",
@@ -403,6 +418,213 @@ describe("RemisionUseCases.create", () => {
 		);
 
 		expect(result.clientName).toBe("Cliente A");
+	});
+
+	test("persists items enriched with per-item ivaValue", async () => {
+		const getNextConsecutive = vi.fn().mockResolvedValue(1);
+		const create = vi.fn().mockResolvedValue(makeRemision("id1"));
+		const remisionRepo = {
+			getNextConsecutive,
+			create,
+		} as unknown as IRemisionRepository;
+		const companyRepo = {
+			findById: vi.fn().mockResolvedValue(makeCompany("comp1")),
+		} as unknown as ICompanyRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			companyRepo,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		await useCases.create(
+			{
+				type: "priced",
+				documentType: "remision",
+				companyId: "comp1",
+				clientId: "cli1",
+				items: [
+					{
+						description: "A",
+						quantity: 1,
+						unitPrice: 100,
+						hasIva: true,
+						ivaPercentage: 19,
+					},
+					{
+						description: "B",
+						quantity: 1,
+						unitPrice: 100,
+						hasIva: false,
+					},
+				],
+				hasRetencion: false,
+			},
+			"owner1",
+			"admin",
+		);
+
+		const payload = create.mock.calls[0][0] as Record<string, unknown>;
+		const items = payload.items as Array<Record<string, unknown>>;
+		expect(items[0].ivaValue).toBe(19);
+		expect(items[1].ivaValue).toBeUndefined();
+		expect(payload.ivaValue).toBe(19);
+		expect(payload.subtotal).toBe(200);
+		expect(payload.total).toBe(219);
+	});
+
+	test("a rejected create does not consume a consecutive number", async () => {
+		const getNextConsecutive = vi.fn().mockResolvedValue(1);
+		const create = vi.fn().mockResolvedValue(makeRemision("id1"));
+		const remisionRepo = {
+			getNextConsecutive,
+			create,
+		} as unknown as IRemisionRepository;
+		const companyRepo = {
+			findById: vi.fn().mockResolvedValue(makeCompany("comp1")),
+		} as unknown as ICompanyRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			companyRepo,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		let caught: unknown;
+		try {
+			await useCases.create(
+				{
+					type: "priced",
+					documentType: "remision",
+					companyId: "comp1",
+					clientId: "cli1",
+					items: [
+						{
+							description: "Item",
+							quantity: 2,
+							unitPrice: 10,
+							hasIva: true,
+							ivaPercentage: 19,
+						},
+					],
+					ivaValue: 999,
+					hasRetencion: false,
+				},
+				"owner1",
+				"admin",
+			);
+		} catch (err) {
+			caught = err;
+		}
+
+		expect(caught).toBeInstanceOf(ValidationError);
+		expect(getNextConsecutive).not.toHaveBeenCalled();
+		expect(create).not.toHaveBeenCalled();
+	});
+
+	test("rejects a sent ivaValue that does not match the derived sum", async () => {
+		const getNextConsecutive = vi.fn().mockResolvedValue(1);
+		const create = vi.fn();
+		const remisionRepo = {
+			getNextConsecutive,
+			create,
+		} as unknown as IRemisionRepository;
+		const companyRepo = {
+			findById: vi.fn().mockResolvedValue(makeCompany("comp1")),
+		} as unknown as ICompanyRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			companyRepo,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		let caught: unknown;
+		try {
+			await useCases.create(
+				{
+					type: "priced",
+					documentType: "remision",
+					companyId: "comp1",
+					clientId: "cli1",
+					items: [
+						{
+							description: "A",
+							quantity: 1,
+							unitPrice: 100,
+							hasIva: true,
+							ivaPercentage: 19,
+						},
+					],
+					ivaValue: 999,
+					hasRetencion: false,
+				},
+				"owner1",
+				"admin",
+			);
+		} catch (err) {
+			caught = err;
+		}
+
+		expect(caught).toBeInstanceOf(ValidationError);
+		expect((caught as ValidationError).statusCode).toBe(422);
+		expect(create).not.toHaveBeenCalled();
+	});
+
+	test("accepts a sent ivaValue that matches the derived sum", async () => {
+		const getNextConsecutive = vi.fn().mockResolvedValue(1);
+		const create = vi.fn().mockResolvedValue(makeRemision("id1"));
+		const remisionRepo = {
+			getNextConsecutive,
+			create,
+		} as unknown as IRemisionRepository;
+		const companyRepo = {
+			findById: vi.fn().mockResolvedValue(makeCompany("comp1")),
+		} as unknown as ICompanyRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			companyRepo,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		await useCases.create(
+			{
+				type: "priced",
+				documentType: "remision",
+				companyId: "comp1",
+				clientId: "cli1",
+				items: [
+					{
+						description: "A",
+						quantity: 1,
+						unitPrice: 100,
+						hasIva: true,
+						ivaPercentage: 19,
+					},
+				],
+				ivaValue: 19,
+				hasRetencion: false,
+			},
+			"owner1",
+			"admin",
+		);
+
+		expect(create).toHaveBeenCalledTimes(1);
+		const payload = create.mock.calls[0][0] as Record<string, unknown>;
+		expect(payload.ivaValue).toBe(19);
 	});
 });
 

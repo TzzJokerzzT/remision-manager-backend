@@ -43,22 +43,39 @@ export class RemisionUseCases {
 			throw new ForbiddenError("No tienes acceso a esta empresa");
 		}
 
-		const consecutive = await this.remisionRepo.getNextConsecutive(
-			dto.companyId,
-		);
 		const totals = computeRemisionTotals(
 			dto.items,
 			dto.type,
-			dto.ivaPercentage,
 			dto.hasRetencion,
 			dto.retencionPercentage,
 		);
 
+		if (
+			dto.type === "priced" &&
+			dto.ivaValue !== undefined &&
+			dto.ivaValue !== totals.ivaValue
+		) {
+			throw new ValidationError(
+				`ivaValue no coincide con el valor calculado (enviado ${dto.ivaValue}, calculado ${totals.ivaValue})`,
+			);
+		}
+
+		// Allocate the consecutive only after every validation passed, so a
+		// rejected create never burns a legal document number.
+		const consecutive = await this.remisionRepo.getNextConsecutive(
+			dto.companyId,
+		);
+
+		const { subtotal, ivaValue, retencionValue, total } = totals;
 		const created = await this.remisionRepo.create({
 			...dto,
 			consecutive,
 			ownerId,
-			...totals,
+			subtotal,
+			ivaValue,
+			retencionValue,
+			total,
+			items: totals.items,
 		});
 		const client = await this.clientRepo.findById(dto.clientId);
 		return { ...created, clientName: client?.name ?? "" };
@@ -141,7 +158,6 @@ export class RemisionUseCases {
 
 		const items = dto.items ?? remision.items;
 		const type = dto.type ?? remision.type;
-		const ivaPercentage = dto.ivaPercentage ?? remision.ivaPercentage;
 		const hasRetencion = dto.hasRetencion ?? remision.hasRetencion;
 		const retencionPercentage =
 			dto.retencionPercentage ?? remision.retencionPercentage;
@@ -157,15 +173,29 @@ export class RemisionUseCases {
 		const totals = computeRemisionTotals(
 			items,
 			type,
-			ivaPercentage,
 			hasRetencion,
 			retencionPercentage,
 		);
 
+		if (
+			type === "priced" &&
+			dto.ivaValue !== undefined &&
+			dto.ivaValue !== totals.ivaValue
+		) {
+			throw new ValidationError(
+				`ivaValue no coincide con el valor calculado (enviado ${dto.ivaValue}, calculado ${totals.ivaValue})`,
+			);
+		}
+
+		const { subtotal, ivaValue, retencionValue, total } = totals;
 		const updated = await this.remisionRepo.update(id, {
 			...dto,
 			type,
-			...totals,
+			subtotal,
+			ivaValue,
+			retencionValue,
+			total,
+			items: totals.items,
 		});
 		if (!updated) throw new NotFoundError("Remisión");
 		const client = await this.clientRepo.findById(remision.clientId);

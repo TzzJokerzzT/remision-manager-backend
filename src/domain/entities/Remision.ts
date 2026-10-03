@@ -5,6 +5,9 @@ export interface RemisionItem {
 	description: string;
 	quantity: number;
 	unitPrice?: number;
+	hasIva?: boolean;
+	ivaPercentage?: number;
+	ivaValue?: number;
 }
 
 export interface Remision {
@@ -17,7 +20,6 @@ export interface Remision {
 	driverId?: string;
 	items: RemisionItem[];
 	subtotal?: number;
-	ivaPercentage?: number;
 	ivaValue?: number;
 	hasRetencion: boolean;
 	retencionPercentage?: number;
