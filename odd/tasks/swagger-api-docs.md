@@ -1,8 +1,8 @@
 # Feature: swagger api docs
 
-**Status**: in progress
+**Status**: closed — commits `47544b9`, `5badfca`, `2e3b0ab`, `3bc0232`; native review approved; PR #7
 **Origin**: new requirement — OpenAPI/Swagger documentation for the whole API
-**Branch**: to be branched from `feat/remision-per-item-iva` (after PR #6) or from `production` once #5/#6 land
+**Branch**: `feat/swagger-api-docs`, stacked on `feat/remision-per-item-iva` (PR #6)
 
 ## Goal
 
@@ -173,3 +173,33 @@ infrastructure that unit 1 already proved with tests.
   `{success, data, message}` envelope the rest of the API uses, and both are documented faithfully
   instead of forced into the shared envelope. `GET /api/users` is also unpaginated while clients,
   companies and drivers paginate.
+
+## Review and delivery
+
+- **Native review** — lineage `review-6b275b82ac90fbb3` over the committed slice `8a8245d..5badfca`:
+  tier medium, lens `review-reliability`, 2181 changed lines, correction budget 200. State `approved`,
+  authority burned (`gentle-ai.review-acknowledged/v1`). Three advisory, non-blocking findings, no
+  correction opened:
+  - `R3-csp-coverage` — `server.ts:130-141`, the route-scoped CSP override.
+  - `R3-docs-import-coupling` — `server.ts:19-20`: the docs modules were imported eagerly and loaded
+    at boot even with the flag off. **Fixed** in `2e3b0ab`, which moves both imports inside the route
+    handlers; the gating tests exercise that dynamic path.
+  - `R3-env-flag-coverage` — `env.ts:47-50`: the flag derivation has no test of its own, because the
+    docs tests mock the env module.
+- **Commits** — `47544b9` (unit 1: infrastructure + remisiones), `5badfca` (unit 2: the other five
+  modules), `2e3b0ab` (lazy docs import), `3bc0232` (untrack the generated skill-registry artifacts).
+- **PR #7** — stacked on PR #6, base `feat/remision-per-item-iva`. `ci`, Vercel, Vercel Preview
+  Comments and GitGuardian all green.
+- **Merge order** — #5 → #6 → #7.
+
+## Follow-ups (accepted, deliberately not done)
+
+- `R3-env-flag-coverage` and `R3-csp-coverage` from the review above.
+- The three API inconsistencies the spec surfaced: the `refresh`/`logout` envelope, the unpaginated
+  `GET /api/users`, and the register password rule OpenAPI cannot express in full. **Deferred by the
+  user**: they are API changes, not documentation changes, so they stay mapped rather than fixed here.
+- Per-field descriptions in the spec: the DTO files were deliberately kept out of the docs work, so
+  descriptions live at schema and operation level only. Enriching them means adding `.openapi()`
+  metadata to the DTOs, which is its own unit.
+- `.atl/skill-registry*` are no longer tracked, so they stop appearing as workspace changes in every
+  review preflight.
