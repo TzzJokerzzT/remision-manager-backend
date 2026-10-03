@@ -134,6 +134,10 @@ export function createServer(): Application {
 					styleSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'"],
 					fontSrc: ["'self'", "https://unpkg.com", "data:"],
 					imgSrc: ["'self'", "https://unpkg.com", "data:"],
+					// The spec is same-origin, but Swagger UI also fetches its own source
+					// maps from the CDN. Without this they fall back to `default-src 'self'`
+					// and each one is reported as blocked in the console.
+					connectSrc: ["'self'", "https://unpkg.com"],
 				},
 			},
 		});
