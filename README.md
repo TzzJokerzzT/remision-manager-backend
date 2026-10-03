@@ -259,7 +259,39 @@ Además, `commitlint` valida que el mensaje siga **Conventional Commits** (`feat
 
 ---
 
+## Documentación de la API (OpenAPI/Swagger)
+
+La API expone su especificación **OpenAPI 3.0.3** generada automáticamente desde los **DTOs Zod**, por lo que no puede desincronizarse del contrato de validación.
+
+| Método | Ruta | Descripción | Auth |
+|---|---|---|---|
+| GET | `/api-docs` | Página Swagger UI (HTML) | No |
+| GET | `/api-docs/openapi.json` | Especificación OpenAPI (JSON) | No |
+
+La página Swagger UI carga sus assets desde un CDN (no se sirven assets empaquetados) y apunta a `/api-docs/openapi.json`.
+
+### Habilitar / deshabilitar
+
+La documentación está controlada por la variable `ENABLE_API_DOCS`:
+
+- Por defecto está **habilitada fuera de producción** (`NODE_ENV !== "production"`).
+- En producción está **deshabilitada** salvo que se active explícitamente.
+
+Para habilitarla en producción, agrega a `.env`:
+
+```env
+ENABLE_API_DOCS=true
+```
+
+> **Nota**: la variable se parsea explícitamente (`"true"` / `"false"`), nunca con coerción booleana, para que el string `"false"` no se interprete como `true`.
+
+> **Dependencia fijada**: `@asteasolutions/zod-to-openapi` está pinneada en `7.3.4` a propósito. Las líneas 8.x y 9.x exigen Zod 4, y este proyecto usa Zod 3. La versión exacta evita que un `bun update` la suba a una línea incompatible sin que nadie lo note. Al migrar a Zod 4 se puede subir de línea.
+
+---
+
 ## Endpoints
+
+> **Referencia autoritativa**: la especificación OpenAPI completa — generada desde los DTOs Zod y siempre sincronizada con el contrato de validación — se sirve en **`/api-docs`** (Swagger UI) y **`/api-docs/openapi.json`** (JSON). Las tablas de abajo son un resumen rápido; para firmas, parámetros, códigos de error y ejemplos consulta la UI.
 
 Todas las rutas (excepto `/register`, `/login`, `/refresh`) requieren el header:
 ```
@@ -336,12 +368,29 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 | DELETE | `/:id` | Eliminar remisión | Sí |
 
 **Tipos de remisión:**
-- `priced`: calcula `subtotal`, `ivaValue` y `total` automáticamente a partir de `items` e `ivaPercentage`.
+- `priced`: calcula `subtotal`, `ivaValue` y `total` automáticamente a partir de `items` (IVA por item).
 - `quantity_only`: omite esos cálculos (solo registra cantidades).
 
 El campo `documentType` indica el tipo de documento (`remision` u `orden_compra`) y por defecto es `remision`.
 
 El campo `consecutive` se autogenera por empresa.
+
+**IVA por item:**
+Cada item define su propio IVA:
+
+- `hasIva`: indica si el producto grava IVA (`true`/`false`). Es **requerido** en cada item de las peticiones de creación/actualización.
+- `ivaPercentage`: porcentaje de IVA del item (requerido y mayor a `0` cuando `hasIva` es `true`; debe estar ausente o ser `0` cuando `hasIva` es `false`).
+- `ivaValue`: valor de IVA del item, **calculado por el servidor** (nunca se acepta desde el cliente).
+
+El `ivaValue` de la remisión se calcula como la suma de los `ivaValue` de los items gravados:
+
+- Por item gravado: `round2(quantity × unitPrice × ivaPercentage / 100)`.
+- Por item exento (`hasIva: false`): sin `ivaValue`.
+- Total de la remisión: `round2(Σ ivaValue por item)` (sobre los valores ya redondeados).
+
+El `ivaValue` de la remisión se acepta del cliente como verificación opcional: si se envía y no coincide con el valor calculado, la petición se rechaza con `422`.
+
+> **Cambio de ruptura**: el `ivaPercentage` a nivel de remisión fue eliminado. Los clientes deben enviar ahora `hasIva` (y `ivaPercentage` cuando aplique) por cada item.
 
 **Retención en la fuente:**
 - `hasRetencion`: indica si la remisión aplica retención en la fuente (`true`/`false`).

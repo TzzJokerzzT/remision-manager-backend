@@ -121,6 +121,48 @@ export function createServer(): Application {
 		}
 	});
 
+	// --- OpenAPI/Swagger docs (env-gated) ---
+	// The global helmet CSP (script-src 'self') would refuse the CDN bundle and
+	// the inline bootstrap, so this route-scoped override relaxes only the docs
+	// page while the rest of the app keeps the strict global CSP.
+	if (env.ENABLE_API_DOCS) {
+		const docsHelmet = helmet({
+			crossOriginResourcePolicy: { policy: "cross-origin" },
+			contentSecurityPolicy: {
+				directives: {
+					scriptSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'"],
+					styleSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'"],
+					fontSrc: ["'self'", "https://unpkg.com", "data:"],
+					imgSrc: ["'self'", "https://unpkg.com", "data:"],
+					// The spec is same-origin, but Swagger UI also fetches its own source
+					// maps from the CDN. Without this they fall back to `default-src 'self'`
+					// and each one is reported as blocked in the console.
+					connectSrc: ["'self'", "https://unpkg.com"],
+				},
+			},
+		});
+
+		// The docs layer is imported lazily: with the flag off none of it is loaded,
+		// and even with it on the OpenAPI builder and its dependency are only pulled
+		// in on the first docs request instead of at boot.
+		app.get("/api-docs", docsHelmet, async (_req, res, next) => {
+			try {
+				const { swaggerUiHtml } = await import("./docs/swagger-ui.js");
+				res.type("html").send(swaggerUiHtml());
+			} catch (err) {
+				next(err);
+			}
+		});
+		app.get("/api-docs/openapi.json", async (_req, res, next) => {
+			try {
+				const { buildOpenApiDocument } = await import("./docs/openapi.js");
+				res.json(buildOpenApiDocument());
+			} catch (err) {
+				next(err);
+			}
+		});
+	}
+
 	app.use("/api/auth", buildAuthRoutes(authController));
 	app.use("/api/users", buildUserRoutes(userController));
 	app.use("/api/companies", buildCompanyRoutes(companyController));

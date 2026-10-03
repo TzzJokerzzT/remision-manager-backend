@@ -10,8 +10,8 @@ describe("computeRemisionTotals", () => {
 	test("sums quantity × unitPrice for priced items", () => {
 		const totals = computeRemisionTotals(
 			[
-				{ description: "A", quantity: 2, unitPrice: 10 },
-				{ description: "B", quantity: 3, unitPrice: 5.5 },
+				{ description: "A", quantity: 2, unitPrice: 10, hasIva: false },
+				{ description: "B", quantity: 3, unitPrice: 5.5, hasIva: false },
 			],
 			"priced",
 		);
@@ -31,11 +31,11 @@ describe("computeRemisionTotals", () => {
 		expect(totals.total).toBe(0);
 	});
 
-	test("excludes quantity_only items from monetary totals", () => {
+	test("excludes items without unitPrice from monetary totals", () => {
 		const totals = computeRemisionTotals(
 			[
-				{ description: "Priced", quantity: 2, unitPrice: 100 },
-				{ description: "Count only", quantity: 5 },
+				{ description: "Priced", quantity: 2, unitPrice: 100, hasIva: false },
+				{ description: "Count only", quantity: 5, hasIva: false },
 			],
 			"priced",
 		);
@@ -44,23 +44,132 @@ describe("computeRemisionTotals", () => {
 		expect(totals.total).toBe(200);
 	});
 
-	test("quantity_only type returns all undefined", () => {
-		const totals = computeRemisionTotals(
-			[{ description: "Count only", quantity: 5 }],
-			"quantity_only",
-		);
+	test("quantity_only type returns all undefined and does not enrich items", () => {
+		const items = [
+			{
+				description: "Count only",
+				quantity: 5,
+				hasIva: true,
+				ivaPercentage: 19,
+			},
+		];
+		const totals = computeRemisionTotals(items, "quantity_only");
 
 		expect(totals.subtotal).toBeUndefined();
 		expect(totals.ivaValue).toBeUndefined();
 		expect(totals.retencionValue).toBeUndefined();
 		expect(totals.total).toBeUndefined();
+		expect(totals.items).toEqual(items);
+		expect(totals.items[0].ivaValue).toBeUndefined();
+	});
+
+	test("quantity_only strips a per-item ivaValue carried by the items", () => {
+		const totals = computeRemisionTotals(
+			[
+				{
+					description: "Count only",
+					quantity: 5,
+					hasIva: true,
+					ivaPercentage: 19,
+					ivaValue: 5,
+				},
+			],
+			"quantity_only",
+		);
+
+		expect(totals.items[0]).not.toHaveProperty("ivaValue");
+	});
+
+	test("taxed item derives its own ivaValue", () => {
+		const totals = computeRemisionTotals(
+			[
+				{
+					description: "A",
+					quantity: 2,
+					unitPrice: 100,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+			],
+			"priced",
+		);
+
+		expect(totals.items[0].ivaValue).toBe(38);
+		expect(totals.ivaValue).toBe(38);
+		expect(totals.total).toBe(238);
+	});
+
+	test("exempt item produces no per-item ivaValue", () => {
+		const totals = computeRemisionTotals(
+			[{ description: "B", quantity: 2, unitPrice: 100, hasIva: false }],
+			"priced",
+		);
+
+		expect(totals.items[0].ivaValue).toBeUndefined();
+		expect(totals.ivaValue).toBe(0);
+		expect(totals.total).toBe(200);
+	});
+
+	test("aggregate sums only taxed items (mixed taxed + exempt)", () => {
+		const totals = computeRemisionTotals(
+			[
+				{
+					description: "A",
+					quantity: 1,
+					unitPrice: 100,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+				{ description: "B", quantity: 1, unitPrice: 100, hasIva: false },
+			],
+			"priced",
+		);
+
+		expect(totals.subtotal).toBe(200);
+		expect(totals.items[0].ivaValue).toBe(19);
+		expect(totals.items[1].ivaValue).toBeUndefined();
+		expect(totals.ivaValue).toBe(19);
+		expect(totals.total).toBe(219);
+	});
+
+	test("rounds per item first, then sums the rounded values", () => {
+		const totals = computeRemisionTotals(
+			[
+				{
+					description: "A",
+					quantity: 1,
+					unitPrice: 0.19,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+				{
+					description: "B",
+					quantity: 1,
+					unitPrice: 0.19,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+			],
+			"priced",
+		);
+
+		expect(totals.items[0].ivaValue).toBe(0.04);
+		expect(totals.items[1].ivaValue).toBe(0.04);
+		expect(totals.ivaValue).toBe(0.08);
 	});
 
 	test("rounds to 2 decimals via toFixed(2)", () => {
 		const totals = computeRemisionTotals(
-			[{ description: "A", quantity: 1, unitPrice: 19.99 }],
+			[
+				{
+					description: "A",
+					quantity: 1,
+					unitPrice: 19.99,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+			],
 			"priced",
-			19,
 		);
 
 		expect(totals.subtotal).toBe(19.99);
@@ -73,7 +182,39 @@ describe("computeRemisionTotals", () => {
 
 		try {
 			computeRemisionTotals(
-				[{ description: "A", quantity: 1, unitPrice: -5 }],
+				[{ description: "A", quantity: 1, unitPrice: -5, hasIva: false }],
+				"priced",
+			);
+		} catch (err) {
+			caught = err;
+		}
+
+		expect(caught).toBeInstanceOf(ValidationError);
+		expect((caught as ValidationError).statusCode).toBe(422);
+	});
+
+	test("throws ValidationError (422) when a priced item is missing hasIva", () => {
+		let caught: unknown;
+
+		try {
+			computeRemisionTotals(
+				[{ description: "A", quantity: 1, unitPrice: 10 }],
+				"priced",
+			);
+		} catch (err) {
+			caught = err;
+		}
+
+		expect(caught).toBeInstanceOf(ValidationError);
+		expect((caught as ValidationError).statusCode).toBe(422);
+	});
+
+	test("throws ValidationError (422) when hasIva true lacks a positive ivaPercentage", () => {
+		let caught: unknown;
+
+		try {
+			computeRemisionTotals(
+				[{ description: "A", quantity: 1, unitPrice: 10, hasIva: true }],
 				"priced",
 			);
 		} catch (err) {
@@ -86,9 +227,16 @@ describe("computeRemisionTotals", () => {
 
 	test("calculates retencionValue when hasRetencion is true", () => {
 		const totals = computeRemisionTotals(
-			[{ description: "A", quantity: 1, unitPrice: 1000 }],
+			[
+				{
+					description: "A",
+					quantity: 1,
+					unitPrice: 1000,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+			],
 			"priced",
-			19,
 			true,
 			2.5,
 		);
@@ -102,9 +250,16 @@ describe("computeRemisionTotals", () => {
 
 	test("retencionValue is undefined when hasRetencion is false", () => {
 		const totals = computeRemisionTotals(
-			[{ description: "A", quantity: 1, unitPrice: 1000 }],
+			[
+				{
+					description: "A",
+					quantity: 1,
+					unitPrice: 1000,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+			],
 			"priced",
-			19,
 			false,
 			2.5,
 		);
@@ -115,9 +270,16 @@ describe("computeRemisionTotals", () => {
 
 	test("retencionValue is undefined when retencionPercentage is not provided", () => {
 		const totals = computeRemisionTotals(
-			[{ description: "A", quantity: 1, unitPrice: 1000 }],
+			[
+				{
+					description: "A",
+					quantity: 1,
+					unitPrice: 1000,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+			],
 			"priced",
-			19,
 			true,
 		);
 
@@ -130,11 +292,22 @@ describe("computeRemisionTotals", () => {
 		// total = 200 + 38 - 5 = 233
 		const totals = computeRemisionTotals(
 			[
-				{ description: "A", quantity: 2, unitPrice: 50 },
-				{ description: "B", quantity: 1, unitPrice: 100 },
+				{
+					description: "A",
+					quantity: 2,
+					unitPrice: 50,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
+				{
+					description: "B",
+					quantity: 1,
+					unitPrice: 100,
+					hasIva: true,
+					ivaPercentage: 19,
+				},
 			],
 			"priced",
-			19,
 			true,
 			2.5,
 		);
