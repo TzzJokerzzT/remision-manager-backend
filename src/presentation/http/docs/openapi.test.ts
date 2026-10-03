@@ -255,15 +255,19 @@ describe("OpenAPI document", () => {
 
 	test("loads the standalone preset before the bootstrap that references it", () => {
 		const html = swaggerUiHtml();
-		// The inline bootstrap references SwaggerUIStandalonePreset, which is a
-		// separate UMD file. If its script tag is missing the page throws
-		// "SwaggerUIStandalonePreset is not defined" and never renders.
-		const presetScriptAt = html.indexOf("swagger-ui-standalone-preset.js");
-		const bootstrapAt = html.indexOf("SwaggerUIStandalonePreset");
+		// Anchor on the real script tags and the real bootstrap. The comment above
+		// them also names both files, so a plain indexOf would match the comment and
+		// the assertion would hold even with the script tag missing.
+		const bundleTagAt = html.search(/<script[^>]+swagger-ui-bundle\.js/);
+		const presetTagAt = html.search(
+			/<script[^>]+swagger-ui-standalone-preset\.js/,
+		);
+		const bootstrapAt = html.indexOf("window.onload");
 
-		expect(html).toContain("swagger-ui-bundle.js");
-		expect(presetScriptAt).toBeGreaterThan(-1);
-		expect(presetScriptAt).toBeLessThan(bootstrapAt);
+		expect(bundleTagAt).toBeGreaterThan(-1);
+		expect(presetTagAt).toBeGreaterThan(-1);
+		expect(bundleTagAt).toBeLessThan(bootstrapAt);
+		expect(presetTagAt).toBeLessThan(bootstrapAt);
 	});
 
 	test("documents the real list filters and the company duplicate conflict", () => {
