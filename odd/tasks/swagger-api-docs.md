@@ -1,0 +1,140 @@
+# Feature: swagger api docs
+
+**Status**: in progress
+**Origin**: new requirement — OpenAPI/Swagger documentation for the whole API
+**Branch**: to be branched from `feat/remision-per-item-iva` (after PR #6) or from `production` once #5/#6 land
+
+## Goal
+
+Serve a generated OpenAPI 3.0.3 document plus a Swagger UI page for all 29 endpoints in the
+6 modules, derived from the existing Zod DTOs so the spec cannot drift from the validation
+contract.
+
+## Locked decisions
+
+| # | Decision | Choice |
+|---|----------|--------|
+| 1 | Source of truth | **Generated from the Zod DTOs** with `@asteasolutions/zod-to-openapi` (runtime dependency) |
+| 2 | Scope | **The whole API** — 29 endpoints plus `/health` |
+| 3 | Exposure | **Env-gated**: on by default outside production, off in production unless `ENABLE_API_DOCS=true` |
+
+Derived decisions taken by the parent:
+
+- **OpenAPI 3.0.3**, not 3.1, for the broadest tooling support (Swagger UI, Postman, codegen).
+- **UI hosting: CDN, not bundled assets.** `vercel.json` rewrites everything to `/api/index`,
+  so serving `swagger-ui-express` assets from `node_modules` in a serverless function is
+  fragile. The app serves the spec as JSON and a minimal HTML page loads Swagger UI from a
+  CDN. No extra runtime dependency for the UI.
+
+## Integration traps (found while exploring, must be handled)
+
+1. **helmet's default CSP blocks the CDN.** `server.ts:37-39` calls `helmet({ crossOriginResourcePolicy })`
+   with the default `contentSecurityPolicy`, whose `script-src 'self'` refuses an external
+   Swagger UI bundle. The docs route needs a route-scoped helmet override that allows the CDN
+   for `script-src`/`style-src`/`font-src`/`img-src` **without weakening the global CSP**.
+2. **`z.coerce.boolean()` treats the string `"false"` as `true`.** `ENABLE_API_DOCS` must be
+   parsed explicitly (an `enum(["true","false"]).optional()` plus a post-parse default derived
+   from `NODE_ENV`), never coerced.
+3. **The response contract has no Zod schema today.** Entities are TypeScript interfaces, so
+   response schemas must be written in the docs layer. To stop them drifting from the
+   entities, add a compile-time equality guard (a type-level assertion that the inferred
+   schema type equals the entity type) so a mismatch fails `tsc --noEmit`.
+4. **`env.ts` calls `process.exit(1)` on invalid env.** The new variable must be optional so
+   the existing CI env set keeps working.
+5. **Adding a dependency changes `bun.lock`.** Install with `bun add`, and keep the existing
+   `bun test` suite green (171 tests) — the docs work must not alter validation behaviour.
+
+## What the spec must contain
+
+- **All paths**: `/api/auth` (4), `/api/users` (5), `/api/companies` (5), `/api/clients` (5),
+  `/api/drivers` (5), `/api/remisiones` (5), plus `/health`.
+- **Security**: a `bearerAuth` HTTP bearer scheme, with per-operation `security` — public for
+  `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/refresh`, `/health` and
+  the docs routes; bearer for everything else. Document `authorize("admin")` on `GET /api/users`.
+- **Envelopes**: success `{ success: true, data, message }`; error
+  `{ success: false, message, details? }`.
+- **Error responses per operation**: 401, 403, 404, 422 (validation, with the flattened
+  `details`), 429 (rate limit), 409 (duplicate key), 500 — only where actually reachable.
+- **The remisión per-item IVA contract** (`odd/tasks/remision-per-item-iva.md`): the item shape
+  with `hasIva` required, `ivaPercentage` required when taxed, `ivaValue` derived and never
+  accepted; the optional aggregate cross-check and its 422; the per-item-then-sum rounding rule;
+  and the 422 that a `PATCH` without items raises on a historical priced document. Include
+  request and response examples with real numbers (subtotal 200, one taxed and one exempt item,
+  `ivaValue` 19, `total` 219).
+- **Refinements as prose.** OpenAPI cannot express conditional cross-field rules, so the
+  `hasIva`/`ivaPercentage` contradiction, the `priced` ⇒ `unitPrice` rule and the retention
+  rule are documented in operation descriptions, not as schema constraints.
+
+## Slicing
+
+The whole API is far past the 400-line review budget, so it is delivered as two cohesive work
+units on the same branch, one commit each:
+
+- **Unit 1** — infrastructure (dependency, env gating, registry, UI, server wiring, envelope,
+  security scheme, error schemas, entity response schemas with the drift guard, docs tests,
+  README) **plus the `/api/remisiones` module fully documented**, because it carries the
+  richest and most recently changed contract.
+- **Unit 2** — the remaining 5 modules (auth, users, companies, clients, drivers) on top of the
+  unit 1 infrastructure.
+
+The split is cohesive: unit 2 only adds path registrations and response schemas against an
+infrastructure that unit 1 already proved with tests.
+
+## Tasks
+
+### Unit 1 — infrastructure + remisiones
+
+- [x] 1. Add `@asteasolutions/zod-to-openapi` and install it (`bun add`), keeping `bun.lock` in sync
+- [x] 2. `ENABLE_API_DOCS` in `src/config/env.ts` (explicit parsing, default from `NODE_ENV`) and in `.env.example`
+- [x] 3. Docs layer: envelope, error and entity response schemas with the compile-time drift guard
+- [x] 4. Registry + document builder emitting OpenAPI 3.0.3 with the bearer security scheme
+- [x] 5. Register the remisiones paths (5) and `/health` with examples and error responses
+- [x] 6. Serve `/api-docs` (spec JSON) and the Swagger UI page from a CDN, gated by the flag, with a route-scoped helmet CSP override
+- [x] 7. RED/GREEN: docs tests — path inventory, security per operation, the remisiones IVA contract, the envelope, and the gating on/off
+- [x] 8. README: the docs endpoint, how to enable it in production, and how to regenerate
+- [x] 9. Verify: `bun test`, `bun run typecheck`, `bunx biome check .`
+
+### Unit 2 — remaining modules
+
+- [ ] 10. Register auth (4), users (5), companies (5), clients (5), drivers (5) with their schemas and error responses
+- [ ] 11. Tests for the full path inventory (30 paths) and per-module security
+- [ ] 12. Verify and update the README endpoint tables to point at the docs
+
+## Non-goals
+
+- No change to validation behaviour, routes, or the response contract.
+- No API versioning, no code generation, no SDK.
+- No auth on the docs routes beyond the env gate.
+- No bundled Swagger UI assets.
+
+## Evidence
+
+- **RED** — greenfield module-resolution failure (`Cannot find module './openapi.js'`) captured before
+  the implementation, reported as what it is rather than dressed up as a behavioural RED.
+- **GREEN** — `bun test`: **179 pass / 0 fail / 450 expect() calls**, 23 files (171 pre-existing + 8 new).
+  `bun run typecheck` clean. `bunx biome check .` clean (101 files).
+- **Independent verification** (gentle-ai-verify, read-only) — 7/7 audit questions VERIFIED:
+  - the **drift guard is not vacuous**: a control compiled without `@ts-expect-error` fails with
+    `TS2344`, and an extra field, a missing field and a changed type are all caught; the guards are
+    reachable from the build graph (`server.ts` → `openapi.ts` → `schemas.ts`), not dead code;
+  - the document is **OpenAPI 3.0.3** with `bearerAuth`, `security: []` on `/health` and
+    `[{bearerAuth: []}]` on all five remisiones operations, and responses emit `$ref`s;
+  - the request schemas carry the **real DTO constraints** (`items.required = [description, quantity,
+    hasIva]`, `ivaPercentage` 0..100, the 24-hex pattern, `minItems: 1`) — no hand-made copy;
+  - **gating** verified in both directions through an env-module mock (no `process.env` mutation),
+    absent when off (404, not 401/403), and the docs routes are not behind `authenticate`;
+  - the **CSP override is route-scoped**: the global `helmet` configuration is untouched and
+    `'unsafe-inline'` is genuinely required by the inline Swagger UI bootstrap;
+  - the **env derivation** is correct in all four combinations, and an absent value can never trigger
+    `process.exit`;
+  - **no pre-existing test was weakened or deleted** (179 − 8 = 171 baseline), and the transient
+    `authorize.test.ts` timeout reported by the writer is pre-existing `mongodb-memory-server`
+    flakiness — not reproduced in 3/3 full runs and unrelated to this unit.
+- **Version decision (verified)** — the latest `9.1.0` requires `zod ^4.0.0` while this repo runs
+  `zod 3.25.76`, so `7.3.4` (`zod ^3.20.2`) is the correct line. Pinned exactly and the rationale is
+  recorded in the README so a future `bun update` is not blind.
+- **Post-verification cleanup** — removed the unreferenced `SuccessEnvelope` component the verifier
+  flagged (it would have shipped a dangling component) and folded the envelope shape into one
+  definition that the per-operation builder extends. Spec re-checked: 3 paths, 4 components, `$ref`
+  on the 201 payload.
+- **Unit 1 scope** — 2 path items plus `/health`, 6 operations. The 30-path goal is unit 2.

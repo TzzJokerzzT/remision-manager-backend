@@ -259,6 +259,36 @@ Además, `commitlint` valida que el mensaje siga **Conventional Commits** (`feat
 
 ---
 
+## Documentación de la API (OpenAPI/Swagger)
+
+La API expone su especificación **OpenAPI 3.0.3** generada automáticamente desde los **DTOs Zod**, por lo que no puede desincronizarse del contrato de validación.
+
+| Método | Ruta | Descripción | Auth |
+|---|---|---|---|
+| GET | `/api-docs` | Página Swagger UI (HTML) | No |
+| GET | `/api-docs/openapi.json` | Especificación OpenAPI (JSON) | No |
+
+La página Swagger UI carga sus assets desde un CDN (no se sirven assets empaquetados) y apunta a `/api-docs/openapi.json`.
+
+### Habilitar / deshabilitar
+
+La documentación está controlada por la variable `ENABLE_API_DOCS`:
+
+- Por defecto está **habilitada fuera de producción** (`NODE_ENV !== "production"`).
+- En producción está **deshabilitada** salvo que se active explícitamente.
+
+Para habilitarla en producción, agrega a `.env`:
+
+```env
+ENABLE_API_DOCS=true
+```
+
+> **Nota**: la variable se parsea explícitamente (`"true"` / `"false"`), nunca con coerción booleana, para que el string `"false"` no se interprete como `true`.
+
+> **Dependencia fijada**: `@asteasolutions/zod-to-openapi` está pinneada en `7.3.4` a propósito. Las líneas 8.x y 9.x exigen Zod 4, y este proyecto usa Zod 3. La versión exacta evita que un `bun update` la suba a una línea incompatible sin que nadie lo note. Al migrar a Zod 4 se puede subir de línea.
+
+---
+
 ## Endpoints
 
 Todas las rutas (excepto `/register`, `/login`, `/refresh`) requieren el header:

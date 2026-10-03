@@ -16,6 +16,8 @@ import {
 } from "../../di/container.js";
 import { connectDatabase } from "../../infrastructure/database/mongoose.js";
 import { logger } from "../../shared/logger.js";
+import { buildOpenApiDocument } from "./docs/openapi.js";
+import { swaggerUiHtml } from "./docs/swagger-ui.js";
 import type { AuthenticatedRequest } from "./middlewares/authenticate.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { generalLimiter } from "./middlewares/rateLimiter.js";
@@ -120,6 +122,31 @@ export function createServer(): Application {
 				.json({ success: false, status: "degraded", db: "disconnected" });
 		}
 	});
+
+	// --- OpenAPI/Swagger docs (env-gated) ---
+	// The global helmet CSP (script-src 'self') would refuse the CDN bundle and
+	// the inline bootstrap, so this route-scoped override relaxes only the docs
+	// page while the rest of the app keeps the strict global CSP.
+	if (env.ENABLE_API_DOCS) {
+		const docsHelmet = helmet({
+			crossOriginResourcePolicy: { policy: "cross-origin" },
+			contentSecurityPolicy: {
+				directives: {
+					scriptSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'"],
+					styleSrc: ["'self'", "https://unpkg.com", "'unsafe-inline'"],
+					fontSrc: ["'self'", "https://unpkg.com", "data:"],
+					imgSrc: ["'self'", "https://unpkg.com", "data:"],
+				},
+			},
+		});
+
+		app.get("/api-docs", docsHelmet, (_req, res) => {
+			res.type("html").send(swaggerUiHtml());
+		});
+		app.get("/api-docs/openapi.json", (_req, res) => {
+			res.json(buildOpenApiDocument());
+		});
+	}
 
 	app.use("/api/auth", buildAuthRoutes(authController));
 	app.use("/api/users", buildUserRoutes(userController));
