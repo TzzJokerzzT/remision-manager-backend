@@ -25,6 +25,7 @@ import request from "supertest";
 import { env } from "../../../config/env.js";
 import { createServer } from "../server.js";
 import { buildOpenApiDocument } from "./openapi.js";
+import { swaggerUiHtml } from "./swagger-ui.js";
 
 // The generated document is navigated by contract, not by the openapi3-ts
 // types, so the assertions below use a loose structural shape.
@@ -250,6 +251,19 @@ describe("OpenAPI document", () => {
 		}
 
 		expect(paths["/api/users"]?.get?.responses).toHaveProperty("403");
+	});
+
+	test("loads the standalone preset before the bootstrap that references it", () => {
+		const html = swaggerUiHtml();
+		// The inline bootstrap references SwaggerUIStandalonePreset, which is a
+		// separate UMD file. If its script tag is missing the page throws
+		// "SwaggerUIStandalonePreset is not defined" and never renders.
+		const presetScriptAt = html.indexOf("swagger-ui-standalone-preset.js");
+		const bootstrapAt = html.indexOf("SwaggerUIStandalonePreset");
+
+		expect(html).toContain("swagger-ui-bundle.js");
+		expect(presetScriptAt).toBeGreaterThan(-1);
+		expect(presetScriptAt).toBeLessThan(bootstrapAt);
 	});
 
 	test("documents the real list filters and the company duplicate conflict", () => {
