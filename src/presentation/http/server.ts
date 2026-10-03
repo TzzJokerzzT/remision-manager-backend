@@ -16,8 +16,6 @@ import {
 } from "../../di/container.js";
 import { connectDatabase } from "../../infrastructure/database/mongoose.js";
 import { logger } from "../../shared/logger.js";
-import { buildOpenApiDocument } from "./docs/openapi.js";
-import { swaggerUiHtml } from "./docs/swagger-ui.js";
 import type { AuthenticatedRequest } from "./middlewares/authenticate.js";
 import { errorHandler, notFoundHandler } from "./middlewares/errorHandler.js";
 import { generalLimiter } from "./middlewares/rateLimiter.js";
@@ -140,11 +138,24 @@ export function createServer(): Application {
 			},
 		});
 
-		app.get("/api-docs", docsHelmet, (_req, res) => {
-			res.type("html").send(swaggerUiHtml());
+		// The docs layer is imported lazily: with the flag off none of it is loaded,
+		// and even with it on the OpenAPI builder and its dependency are only pulled
+		// in on the first docs request instead of at boot.
+		app.get("/api-docs", docsHelmet, async (_req, res, next) => {
+			try {
+				const { swaggerUiHtml } = await import("./docs/swagger-ui.js");
+				res.type("html").send(swaggerUiHtml());
+			} catch (err) {
+				next(err);
+			}
 		});
-		app.get("/api-docs/openapi.json", (_req, res) => {
-			res.json(buildOpenApiDocument());
+		app.get("/api-docs/openapi.json", async (_req, res, next) => {
+			try {
+				const { buildOpenApiDocument } = await import("./docs/openapi.js");
+				res.json(buildOpenApiDocument());
+			} catch (err) {
+				next(err);
+			}
 		});
 	}
 
