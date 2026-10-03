@@ -26,6 +26,9 @@ const envSchema = z.object({
 	LOG_LEVEL: z
 		.enum(["trace", "debug", "info", "warn", "error", "fatal"])
 		.default("info"),
+
+	// Parsed explicitly because z.coerce.boolean() turns "false" into `true`.
+	ENABLE_API_DOCS: z.enum(["true", "false"]).optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -40,6 +43,12 @@ if (!parsed.success) {
 
 export const env = {
 	...parsed.data,
+	// Derive the effective boolean AFTER parsing: "true" only when the raw
+	// value is "true"; when absent, docs are enabled outside production.
+	ENABLE_API_DOCS:
+		parsed.data.ENABLE_API_DOCS === "true" ||
+		(parsed.data.ENABLE_API_DOCS === undefined &&
+			parsed.data.NODE_ENV !== "production"),
 	CORS_ORIGINS_LIST: parsed.data.CORS_ORIGINS.split(",")
 		.map((o) => o.trim())
 		.filter(Boolean)
