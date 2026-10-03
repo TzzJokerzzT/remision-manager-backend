@@ -339,7 +339,16 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 - `priced`: calcula `subtotal`, `ivaValue` y `total` automáticamente a partir de `items` e `ivaPercentage`.
 - `quantity_only`: omite esos cálculos (solo registra cantidades).
 
+El campo `documentType` indica el tipo de documento (`remision` u `orden_compra`) y por defecto es `remision`.
+
 El campo `consecutive` se autogenera por empresa.
+
+**Retención en la fuente:**
+- `hasRetencion`: indica si la remisión aplica retención en la fuente (`true`/`false`).
+- `retencionPercentage`: porcentaje de retención aplicado sobre el subtotal (base gravable, sin IVA).
+- `retencionValue`: valor calculado de la retención (`subtotal × retencionPercentage / 100`).
+
+El total se calcula con la fórmula `total = subtotal + ivaValue - retencionValue`. La retención se calcula sobre el subtotal (base gravable, sin IVA).
 
 ### Paginación y filtros
 

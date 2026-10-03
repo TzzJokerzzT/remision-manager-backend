@@ -10,6 +10,7 @@ import { computeRemisionTotals } from "../../../domain/services/remisionTotals.j
 import {
 	ForbiddenError,
 	NotFoundError,
+	ValidationError,
 } from "../../../shared/errors/AppError.js";
 import {
 	buildPaginationResponse,
@@ -139,19 +140,33 @@ export class RemisionUseCases {
 		this.assertOwnership(remision, requesterId, role);
 
 		const items = dto.items ?? remision.items;
+		const type = dto.type ?? remision.type;
 		const ivaPercentage = dto.ivaPercentage ?? remision.ivaPercentage;
 		const hasRetencion = dto.hasRetencion ?? remision.hasRetencion;
 		const retencionPercentage =
 			dto.retencionPercentage ?? remision.retencionPercentage;
+
+		// A partial DTO cannot see stored state, so the create-time refine is
+		// enforced here after the stored-value fallback.
+		if (hasRetencion === true && retencionPercentage === undefined) {
+			throw new ValidationError(
+				"retencionPercentage es requerido cuando hasRetencion es true",
+			);
+		}
+
 		const totals = computeRemisionTotals(
 			items,
-			remision.type,
+			type,
 			ivaPercentage,
 			hasRetencion,
 			retencionPercentage,
 		);
 
-		const updated = await this.remisionRepo.update(id, { ...dto, ...totals });
+		const updated = await this.remisionRepo.update(id, {
+			...dto,
+			type,
+			...totals,
+		});
 		if (!updated) throw new NotFoundError("Remisión");
 		const client = await this.clientRepo.findById(remision.clientId);
 		return { ...updated, clientName: client?.name ?? "" };

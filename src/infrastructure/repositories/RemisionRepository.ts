@@ -47,7 +47,23 @@ export class RemisionRepository implements IRemisionRepository {
 	}
 
 	async update(id: string, data: Partial<Remision>): Promise<Remision | null> {
-		const doc = await RemisionModel.findByIdAndUpdate(id, data, {
+		// Mongoose strips `undefined` keys, so translate the patch explicitly:
+		// defined values → $set, keys present as undefined → $unset. This keeps
+		// the domain contract (`field?: T` means absent) from leaving stale values.
+		const $set: Record<string, unknown> = {};
+		const $unset: Record<string, unknown> = {};
+		for (const [key, value] of Object.entries(data)) {
+			if (value === undefined) {
+				$unset[key] = 1;
+			} else {
+				$set[key] = value;
+			}
+		}
+		const updateDoc: Record<string, unknown> = {};
+		if (Object.keys($set).length > 0) updateDoc.$set = $set;
+		if (Object.keys($unset).length > 0) updateDoc.$unset = $unset;
+
+		const doc = await RemisionModel.findByIdAndUpdate(id, updateDoc, {
 			new: true,
 			runValidators: true,
 		});

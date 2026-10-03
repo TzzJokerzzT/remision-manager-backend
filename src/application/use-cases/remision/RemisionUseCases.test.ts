@@ -8,6 +8,7 @@ import type { IClientRepository } from "../../../domain/repositories/IClientRepo
 import type { ICompanyRepository } from "../../../domain/repositories/ICompanyRepository.js";
 import type { IDriverRepository } from "../../../domain/repositories/IDriverRepository.js";
 import type { IRemisionRepository } from "../../../domain/repositories/IRemisionRepository.js";
+import { ValidationError } from "../../../shared/errors/AppError.js";
 import { RemisionUseCases } from "./RemisionUseCases.js";
 
 const createdAt = new Date("2024-01-01T00:00:00Z");
@@ -458,5 +459,162 @@ describe("RemisionUseCases.update", () => {
 		);
 
 		expect(result.clientName).toBe("");
+	});
+
+	test("type switch to quantity_only persists type and undefined totals", async () => {
+		const findById = vi.fn().mockResolvedValue(makeRemision("id1"));
+		const update = vi.fn().mockResolvedValue(makeRemision("id1"));
+		const remisionRepo = {
+			findById,
+			update,
+		} as unknown as IRemisionRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			{} as ICompanyRepository,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		await useCases.update("id1", { type: "quantity_only" }, "owner1", "admin");
+
+		const payload = update.mock.calls[0][1] as Record<string, unknown>;
+		expect(payload.type).toBe("quantity_only");
+		expect(payload).toHaveProperty("subtotal");
+		expect(payload).toHaveProperty("ivaValue");
+		expect(payload).toHaveProperty("retencionValue");
+		expect(payload).toHaveProperty("total");
+		expect(payload.subtotal).toBeUndefined();
+		expect(payload.ivaValue).toBeUndefined();
+		expect(payload.retencionValue).toBeUndefined();
+		expect(payload.total).toBeUndefined();
+	});
+
+	test("type switch to priced persists type and computed totals", async () => {
+		const stored = {
+			...makeRemision("id1"),
+			type: "quantity_only" as const,
+			subtotal: undefined,
+			ivaValue: undefined,
+			total: undefined,
+		};
+		const findById = vi.fn().mockResolvedValue(stored);
+		const update = vi.fn().mockResolvedValue(stored);
+		const remisionRepo = {
+			findById,
+			update,
+		} as unknown as IRemisionRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			{} as ICompanyRepository,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		await useCases.update("id1", { type: "priced" }, "owner1", "admin");
+
+		const payload = update.mock.calls[0][1] as Record<string, unknown>;
+		expect(payload.type).toBe("priced");
+		expect(payload.subtotal).toBe(20);
+		expect(payload.ivaValue).toBe(3.8);
+		expect(payload.total).toBe(23.8);
+	});
+
+	test("hasRetencion false clears retencionValue and recomputes total without retention", async () => {
+		const stored = {
+			...makeRemision("id1"),
+			hasRetencion: true,
+			retencionPercentage: 2.5,
+			retencionValue: 0.5,
+			total: 23.3,
+		};
+		const findById = vi.fn().mockResolvedValue(stored);
+		const update = vi.fn().mockResolvedValue(stored);
+		const remisionRepo = {
+			findById,
+			update,
+		} as unknown as IRemisionRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			{} as ICompanyRepository,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		await useCases.update("id1", { hasRetencion: false }, "owner1", "admin");
+
+		const payload = update.mock.calls[0][1] as Record<string, unknown>;
+		expect(payload.hasRetencion).toBe(false);
+		expect(payload).toHaveProperty("retencionValue");
+		expect(payload.retencionValue).toBeUndefined();
+		expect(payload.total).toBe(23.8);
+	});
+
+	test("hasRetencion true with stored percentage recomputes retencionValue", async () => {
+		const stored = {
+			...makeRemision("id1"),
+			hasRetencion: false,
+			retencionPercentage: 2.5,
+		};
+		const findById = vi.fn().mockResolvedValue(stored);
+		const update = vi.fn().mockResolvedValue(stored);
+		const remisionRepo = {
+			findById,
+			update,
+		} as unknown as IRemisionRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			{} as ICompanyRepository,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		await useCases.update("id1", { hasRetencion: true }, "owner1", "admin");
+
+		const payload = update.mock.calls[0][1] as Record<string, unknown>;
+		expect(payload.hasRetencion).toBe(true);
+		expect(payload.retencionValue).toBe(0.5);
+		expect(payload.total).toBe(23.3);
+	});
+
+	test("hasRetencion true without any percentage rejects with ValidationError 422", async () => {
+		const stored = { ...makeRemision("id1"), hasRetencion: false };
+		const findById = vi.fn().mockResolvedValue(stored);
+		const update = vi.fn();
+		const remisionRepo = {
+			findById,
+			update,
+		} as unknown as IRemisionRepository;
+		const clientRepo = {
+			findById: vi.fn().mockResolvedValue(makeClient("cli1", "Cliente A")),
+		} as unknown as IClientRepository;
+		const useCases = new RemisionUseCases(
+			remisionRepo,
+			{} as ICompanyRepository,
+			clientRepo,
+			{} as IDriverRepository,
+		);
+
+		let caught: unknown;
+		try {
+			await useCases.update("id1", { hasRetencion: true }, "owner1", "admin");
+		} catch (err) {
+			caught = err;
+		}
+
+		expect(caught).toBeInstanceOf(ValidationError);
+		expect((caught as ValidationError).statusCode).toBe(422);
+		expect(update).not.toHaveBeenCalled();
 	});
 });
