@@ -51,7 +51,7 @@ const remisionSchema = new Schema<RemisionDocument>(
 		type: { type: String, enum: ["priced", "quantity_only"], required: true },
 		documentType: {
 			type: String,
-			enum: ["remision", "orden_compra"],
+			enum: ["remision", "orden_compra", "cotizacion"],
 			required: true,
 			default: "remision",
 		},
