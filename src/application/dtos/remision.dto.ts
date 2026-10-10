@@ -42,7 +42,9 @@ function refineItemIva(
 export const createRemisionSchema = z
 	.object({
 		type: z.enum(["priced", "quantity_only"]),
-		documentType: z.enum(["remision", "orden_compra"]).default("remision"),
+		documentType: z
+			.enum(["remision", "orden_compra", "cotizacion"])
+			.default("remision"),
 		companyId: z.string().regex(/^[a-fA-F0-9]{24}$/),
 		clientId: z.string().regex(/^[a-fA-F0-9]{24}$/),
 		driverId: z
@@ -77,7 +79,7 @@ export type CreateRemisionDto = z.infer<typeof createRemisionSchema>;
 export const updateRemisionSchema = z
 	.object({
 		type: z.enum(["priced", "quantity_only"]).optional(),
-		documentType: z.enum(["remision", "orden_compra"]).optional(),
+		documentType: z.enum(["remision", "orden_compra", "cotizacion"]).optional(),
 		items: z.array(itemSchema).min(1).optional(),
 		ivaValue: z.number().min(0).optional(),
 		hasRetencion: z.boolean().optional(),

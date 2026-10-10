@@ -1,5 +1,5 @@
 export type RemisionType = "priced" | "quantity_only";
-export type DocumentType = "remision" | "orden_compra";
+export type DocumentType = "remision" | "orden_compra" | "cotizacion";
 
 export interface RemisionItem {
 	description: string;

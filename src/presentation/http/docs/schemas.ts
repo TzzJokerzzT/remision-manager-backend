@@ -53,7 +53,7 @@ export const remisionSchema = z
 		id: z.string(),
 		consecutive: z.number(),
 		type: z.enum(["priced", "quantity_only"]),
-		documentType: z.enum(["remision", "orden_compra"]),
+		documentType: z.enum(["remision", "orden_compra", "cotizacion"]),
 		companyId: z.string(),
 		clientId: z.string(),
 		driverId: z.string().optional(),
