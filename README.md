@@ -7,7 +7,7 @@ API REST para generador de remisiones (con precio + IVA, o solo cantidad). Const
 ## Stack Tecnológico
 
 | Componente | Tecnología | Versión |
-|---|---|---|
+| --- | --- | --- |
 | Runtime | Bun | 1.x |
 | Framework | Express | 4.x |
 | Lenguaje | TypeScript | 5.x (ESM) |
@@ -150,6 +150,7 @@ El sistema almacena **un solo hash de refresh token por usuario**. Cuando un usu
 Esta es una **decisión de diseño intencional** que prioriza simplicidad sobre soporte multi-dispositivo concurrente.
 
 **Workaround para clientes:**
+
 - Compartir el refresh token entre pestañas del mismo navegador usando el mismo mecanismo de storage (localStorage/sessionStorage).
 - Planificar re-autenticación al cambiar de dispositivo.
 
@@ -206,6 +207,7 @@ bun run build    # type-check (tsc --noEmit)
 ```
 
 **Requisitos previos:**
+
 - [Bun](https://bun.sh/) instalado (v1.x)
 - MongoDB accesible (local o Atlas)
 
@@ -230,7 +232,7 @@ bun run format        # biome format .
 ### Tipos de Tests
 
 | Tipo | Ubicación | Herramienta | Qué prueba |
-|------|-----------|-------------|------------|
+| ------ | ----------- | ------------- | ------------ |
 | Unit | Co-ubicados (`*.test.ts`) | bun:test + mocks | Lógica de negocio, DTOs, repositorios |
 | Integration | `src/presentation/http/middlewares/*.test.ts` | bun:test + supertest + mongodb-memory-server | Middlewares contra Express real |
 | E2E | `src/tests/integration/e2e/*.test.ts` | bun:test + supertest | Ciclo completo: register→login→authenticated request |
@@ -264,7 +266,7 @@ Además, `commitlint` valida que el mensaje siga **Conventional Commits** (`feat
 La API expone su especificación **OpenAPI 3.0.3** generada automáticamente desde los **DTOs Zod**, por lo que no puede desincronizarse del contrato de validación.
 
 | Método | Ruta | Descripción | Auth |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/api-docs` | Página Swagger UI (HTML) | No |
 | GET | `/api-docs/openapi.json` | Especificación OpenAPI (JSON) | No |
 
@@ -294,6 +296,7 @@ ENABLE_API_DOCS=true
 > **Referencia autoritativa**: la especificación OpenAPI completa — generada desde los DTOs Zod y siempre sincronizada con el contrato de validación — se sirve en **`/api-docs`** (Swagger UI) y **`/api-docs/openapi.json`** (JSON). Las tablas de abajo son un resumen rápido; para firmas, parámetros, códigos de error y ejemplos consulta la UI.
 
 Todas las rutas (excepto `/register`, `/login`, `/refresh`) requieren el header:
+
 ```
 Authorization: Bearer <accessToken>
 ```
@@ -305,13 +308,14 @@ Authorization: Bearer <accessToken>
 | GET | `/health` | Estado del servidor (200=ok, 503=degraded) | No |
 
 El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
+
 - `200 { status: "ok", db: "connected" }` cuando MongoDB está conectado
 - `503 { status: "degraded", db: "disconnected" }` cuando no está conectado
 
 ### Auth — `/api/auth`
 
 | Método | Ruta | Descripción | Auth |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | POST | `/register` | Registro de usuario (el primero queda como `admin`) | No |
 | POST | `/login` | Login (retorna accessToken + refreshToken) | No |
 | POST | `/refresh` | Renueva tokens (rotación) | No (requiere refreshToken) |
@@ -320,7 +324,7 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 ### Usuarios — `/api/users`
 
 | Método | Ruta | Descripción | Auth |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | GET | `/me` | Perfil del usuario autenticado | Sí |
 | GET | `/` | Listar todos los usuarios | Sí (admin) |
 | GET | `/:id` | Obtener usuario por ID | Sí |
@@ -330,7 +334,7 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 ### Empresas — `/api/companies`
 
 | Método | Ruta | Descripción | Auth |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | POST | `/` | Crear empresa | Sí |
 | GET | `/` | Listar empresas del usuario | Sí |
 | GET | `/:id` | Obtener empresa por ID | Sí |
@@ -340,7 +344,7 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 ### Clientes — `/api/clients`
 
 | Método | Ruta | Descripción | Auth |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | POST | `/` | Crear cliente (requiere `companyId`) | Sí |
 | GET | `/` | Listar clientes (filtro: `?companyId=...`) | Sí |
 | GET | `/:id` | Obtener cliente por ID | Sí |
@@ -350,7 +354,7 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 ### Conductores — `/api/drivers`
 
 | Método | Ruta | Descripción | Auth |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | POST | `/` | Crear conductor (requiere `companyId`) | Sí |
 | GET | `/` | Listar conductores (filtro: `?companyId=...`) | Sí |
 | GET | `/:id` | Obtener conductor por ID | Sí |
@@ -360,7 +364,7 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 ### Remisiones — `/api/remisiones`
 
 | Método | Ruta | Descripción | Auth |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | POST | `/` | Crear remisión | Sí |
 | GET | `/` | Listar remisiones (paginado) | Sí |
 | GET | `/:id` | Obtener remisión por ID | Sí |
@@ -368,10 +372,11 @@ El endpoint `/health` verifica `mongoose.connection.readyState` y retorna:
 | DELETE | `/:id` | Eliminar remisión | Sí |
 
 **Tipos de remisión:**
+
 - `priced`: calcula `subtotal`, `ivaValue` y `total` automáticamente a partir de `items` (IVA por item).
 - `quantity_only`: omite esos cálculos (solo registra cantidades).
 
-El campo `documentType` indica el tipo de documento (`remision` u `orden_compra`) y por defecto es `remision`.
+El campo `documentType` indica el tipo de documento (`remision`, `orden_compra` o `cotizacion`) y por defecto es `remision`.
 
 El campo `consecutive` se autogenera por empresa.
 
@@ -393,6 +398,7 @@ El `ivaValue` de la remisión se acepta del cliente como verificación opcional:
 > **Cambio de ruptura**: el `ivaPercentage` a nivel de remisión fue eliminado. Los clientes deben enviar ahora `hasIva` (y `ivaPercentage` cuando aplique) por cada item.
 
 **Retención en la fuente:**
+
 - `hasRetencion`: indica si la remisión aplica retención en la fuente (`true`/`false`).
 - `retencionPercentage`: porcentaje de retención aplicado sobre el subtotal (base gravable, sin IVA).
 - `retencionValue`: valor calculado de la retención (`subtotal × retencionPercentage / 100`).
@@ -404,7 +410,7 @@ El total se calcula con la fórmula `total = subtotal + ivaValue - retencionValu
 Los endpoints `GET /` de empresas, clientes, conductores y remisiones soportan **paginación**:
 
 | Param | Default | Descripción |
-|---|---|---|
+| --- | --- | --- |
 | `limit` | 20 (remisiones) / 10 (empresas, clientes, conductores) | Registros por página (máx. 100) |
 | `page` | 1 | Número de página |
 
@@ -413,7 +419,7 @@ La respuesta paginada tiene la forma `{ items, total, limit, page, totalPages }`
 `GET /api/remisiones` acepta además **filtros de búsqueda** (componibles entre sí y con la paginación):
 
 | Param | Descripción |
-|---|---|
+| --- | --- |
 | `search` | Búsqueda de texto sobre las **notas** de la remisión |
 | `clientName` | Substring (case-insensitive) sobre el nombre del cliente |
 | `driverName` | Substring (case-insensitive) sobre el nombre del conductor |
